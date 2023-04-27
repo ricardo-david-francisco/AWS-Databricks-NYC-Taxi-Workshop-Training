@@ -28,18 +28,8 @@
 
 # COMMAND ----------
 
-# MAGIC %sh
-# MAGIC # 2) Rename file
-# MAGIC mv "rows.csv?accessType=DOWNLOAD" chicago-crimes.csv
-
-# COMMAND ----------
-
-from libs.dbname import dbname
-from libs.tblname import tblname, username
-uname = username()
-
 # 3) List to validate if file exists
-display(dbutils.fs.ls("file:/databricks/driver/chicago-crimes.csv"))
+display(dbutils.fs.ls("file:/tmp/chicago-crimes.csv"))
 
 # COMMAND ----------
 
@@ -49,9 +39,12 @@ display(dbutils.fs.ls("file:/databricks/driver/chicago-crimes.csv"))
 # COMMAND ----------
 
 # 1) Create destination directory
-dbfs_dir_path = f"/mnt/workshop/staging/crimes/chicago-crimes"
-dbutils.fs.rm(dbfs_dir_path, recurse=True)
-dbutils.fs.mkdirs(dbfs_dir_path)
+
+# Only do this once!!!
+
+# dbfs_dir_path = f"/mnt/workshop/staging/crimes/chicago-crimes"
+# dbutils.fs.rm(dbfs_dir_path, recurse=True)
+# dbutils.fs.mkdirs(dbfs_dir_path)
 
 # COMMAND ----------
 
@@ -66,7 +59,4 @@ display(dbutils.fs.ls(dbfs_dir_path))
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ### 3. Read raw CSV, persist to parquet
 
-# COMMAND ----------

@@ -21,12 +21,6 @@
 
 # COMMAND ----------
 
-# MAGIC %sh
-# MAGIC # 1) Download dataset - gets downloaded to driver
-# MAGIC wget "https://data.cityofchicago.org/api/views/ijzp-q8t2/rows.csv?accessType=DOWNLOAD"
-
-# COMMAND ----------
-
 from libs.dbname import dbname
 from libs.tblname import tblname, username
 uname = username()
@@ -91,6 +85,7 @@ display(dbutils.fs.ls(dbfs_dest_dir_path_raw))
 # MAGIC ### 4. Define external table
 
 # COMMAND ----------
+
 crime = dblname(db="crime")
 print("crime:" + repr(crime))
 spark.conf.set("nbvars.crime", crime)
