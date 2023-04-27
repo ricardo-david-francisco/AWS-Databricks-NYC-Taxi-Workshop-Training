@@ -16,7 +16,6 @@
 # MAGIC Metadata: https://cosmosdbworkshops.blob.core.windows.net/metadata/ChicagoCrimesMetadata.pdf<br>
 # MAGIC   
 # MAGIC Referenes for Databricks:<br>
-# MAGIC Working with blob storage: https://docs.azuredatabricks.net/spark/latest/data-sources/azure/azure-storage.html <br>
 # MAGIC Visualization: https://docs.databricks.com/user-guide/visualizations/charts-and-graphs-scala.html
 # MAGIC   
 
@@ -28,18 +27,12 @@
 
 # COMMAND ----------
 
-# MAGIC %sh
-# MAGIC # 2) Rename file
-# MAGIC mv "rows.csv?accessType=DOWNLOAD" chicago-crimes.csv
-
-# COMMAND ----------
-
 from libs.dbname import dbname
 from libs.tblname import tblname, username
 uname = username()
 
 # 3) List to validate if file exists
-display(dbutils.fs.ls("file:/databricks/driver/chicago-crimes.csv"))
+dbfs_src_dir_path = f"/mnt/workshop/staging/crimes/chicago-crimes"
 
 # COMMAND ----------
 
@@ -49,20 +42,12 @@ display(dbutils.fs.ls("file:/databricks/driver/chicago-crimes.csv"))
 # COMMAND ----------
 
 # 1) Create destination directory
-dbfs_dir_path = f"/mnt/workshop/users/{uname}/staging/crimes/chicago-crimes"
-dbutils.fs.rm(dbfs_dir_path, recurse=True)
-dbutils.fs.mkdirs(dbfs_dir_path)
-
-# COMMAND ----------
-
-# 2) Upload to from localDirPath to dbfs_dir_path
-dbutils.fs.cp("file:/databricks/driver/chicago-crimes.csv", dbfs_dir_path, recurse=True)
 
 # 3) Clean up local directory
 # dbutils.fs.rm(localFile)
 
 # 4) List dbfs_dir_path
-display(dbutils.fs.ls(dbfs_dir_path))
+display(dbutils.fs.ls(dbfs_src_dir_path))
 
 # COMMAND ----------
 
@@ -70,9 +55,6 @@ display(dbutils.fs.ls(dbfs_dir_path))
 # MAGIC ### 3. Read raw CSV, persist to parquet
 
 # COMMAND ----------
-
-# 1) Source directory
-dbfs_src_dir_path = f"/mnt/workshop/users/{uname}/staging/crimes/chicago-crimes"
 
 # 2) Destination directory
 dbfs_dest_dir_path_raw = f"/mnt/workshop/users/{uname}/raw/crimes/chicago-crimes"
