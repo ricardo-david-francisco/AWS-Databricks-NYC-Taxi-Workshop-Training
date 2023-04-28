@@ -8,7 +8,7 @@
 
 # MAGIC %md
 # MAGIC ### 1. Create the taxi_db database in Databricks
-
+# MAGIC
 # MAGIC Specific for the student
 
 # COMMAND ----------
@@ -41,5 +41,3 @@ spark.conf.set("nbvars.taxi_db", taxi_db)
 # COMMAND ----------
 
 display(spark.catalog.listDatabases())
-
-# COMMAND ----------
