@@ -23,7 +23,7 @@
 
 from libs.dbname import dbname
 from libs.tblname import tblname, username
-uname = username()
+uname = username(dbutils)
 
 # 3) List to validate if file exists
 dbfs_src_dir_path = f"/mnt/workshop/staging/crimes/chicago-crimes"

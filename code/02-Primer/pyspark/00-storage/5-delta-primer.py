@@ -27,7 +27,7 @@
 
 from libs.dbname import dbname
 from libs.tblname import tblname, username
-uname = username()
+uname = username(dbutils)
 
 columns = ["book_id", "book_author", "book_name", "book_pub_year"]
 vals = [
