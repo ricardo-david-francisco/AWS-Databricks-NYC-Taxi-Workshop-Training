@@ -10,7 +10,7 @@ def username():
 
 def dbname(*, 
 db="nyc_workshop",
-catalog="hive_metastore",
+catalog="training",
 env="dev",
 ):
     if not db:

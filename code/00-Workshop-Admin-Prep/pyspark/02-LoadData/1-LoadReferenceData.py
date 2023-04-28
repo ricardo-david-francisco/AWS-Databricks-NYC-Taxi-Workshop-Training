@@ -183,24 +183,67 @@ display(dbutils.fs.ls("/mnt/workshop/curated/nyctaxi/reference"))
 
 # COMMAND ----------
 
+# MAGIC %sql
+# MAGIC SELECT current_database(), current_catalog();
+
+# COMMAND ----------
+
 # MAGIC %sql 
-# MAGIC create schema nyctaxi_reference_data;
-# MAGIC use nyctaxi_reference_data;
+# MAGIC use catalog training;
+# MAGIC create schema IF NOT EXISTS nyctaxi_reference_data;
+# MAGIC use schema nyctaxi_reference_data;
 # MAGIC DROP TABLE IF EXISTS taxi_zone_lookup;
 # MAGIC CREATE TABLE IF NOT EXISTS taxi_zone_lookup(
 # MAGIC location_id STRING,
 # MAGIC borough STRING,
 # MAGIC zone STRING,
-# MAGIC service_zone STRING)
-# MAGIC USING parquet
-# MAGIC LOCATION '/mnt/workshop/curated/nyctaxi/reference/taxi-zone/';
+# MAGIC service_zone STRING);
 # MAGIC
-# MAGIC ANALYZE TABLE taxi_zone_lookup COMPUTE STATISTICS;
+# MAGIC -- ANALYZE TABLE taxi_zone_lookup COMPUTE STATISTICS;
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Workaround for missing cloud file system scheme
+# MAGIC
+# MAGIC `AnalysisException: [RequestId=e5919e0f-d3e4-451f-b4fd-41bf04c6ad67 ErrorClass=INVALID_PARAMETER_VALUE] Missing cloud file system scheme`
+# MAGIC
+# MAGIC Happens when creating table off parquet location
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC select * from nyctaxi_reference_data.taxi_zone_lookup;
+# MAGIC insert into training.nyctaxi_reference_data.taxi_zone_lookup (select * from hive_metastore.nyctaxi_reference_data.taxi_zone_lookup);
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC
+# MAGIC ### Failing table creation
+# MAGIC
+# MAGIC Error:
+# MAGIC `AnalysisException: [RequestId=e5919e0f-d3e4-451f-b4fd-41bf04c6ad67 ErrorClass=INVALID_PARAMETER_VALUE] Missing cloud file system scheme`
+
+# COMMAND ----------
+
+# %sql 
+# create schema IF NOT EXISTS training.nyctaxi_reference_data;
+# use training.nyctaxi_reference_data;
+# DROP TABLE IF EXISTS taxi_zone_lookup;
+# CREATE TABLE IF NOT EXISTS taxi_zone_lookup(
+# location_id STRING,
+# borough STRING,
+# zone STRING,
+# service_zone STRING)
+# USING parquet
+# LOCATION '/mnt/workshop/curated/nyctaxi/reference/taxi-zone/';
+
+# ANALYZE TABLE taxi_zone_lookup COMPUTE STATISTICS;
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC select * from training.nyctaxi_reference_data.taxi_zone_lookup;
 
 # COMMAND ----------
 

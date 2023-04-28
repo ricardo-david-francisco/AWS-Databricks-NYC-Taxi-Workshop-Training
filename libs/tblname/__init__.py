@@ -11,7 +11,7 @@ def username():
 def tblname(*, 
 tbl,
 db="nyc_workshop",
-catalog="hive_metastore",
+catalog="training",
 env="dev",
 ):
     if not tbl:
