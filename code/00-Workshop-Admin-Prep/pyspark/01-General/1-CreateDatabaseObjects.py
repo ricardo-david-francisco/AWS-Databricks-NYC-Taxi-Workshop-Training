@@ -28,4 +28,18 @@ spark.sql("CREATE CATALOG IF NOT EXISTS training")
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC # Grant select on files to users
+# MAGIC
+# MAGIC Needed to avoid `java.lang.SecurityException: User does not have permission SELECT on any file.`
+# MAGIC when reading data from /mnt/ areas.
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC GRANT SELECT ON ANY FILE TO `users`;
+# MAGIC GRANT MODIFY ON ANY FILE TO `users`;
+
+# COMMAND ----------
+
 

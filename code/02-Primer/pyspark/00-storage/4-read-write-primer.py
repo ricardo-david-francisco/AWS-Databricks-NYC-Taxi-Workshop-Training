@@ -5,7 +5,7 @@
 # MAGIC 1.  **Download** and curate Chicago crimes public dataset  - 1.5 GB of the Chicago crimes public dataset - has 6.7 million records.<BR>
 # MAGIC 2.  **Upload the dataset to DBFS**, to the staging directory in DBFS<BR>
 # MAGIC 3.  Read the CSV into a dataframe, **persist as parquet** to the raw directory<BR>
-# MAGIC 4.  **Create an external table** on top of the dataset in the raw directory<BR>
+# MAGIC 4.  **Write the data frame into a unity catalog table**<BR>
 # MAGIC 5.  **Explore with SQL construct**<BR>
 # MAGIC 6.  **Curate** the dataset (dedupe, add additional dervived attributes of value etc) for subsequent labs<BR>
 # MAGIC 7.  Do some basic **visualization**<BR>
@@ -76,17 +76,21 @@ sourceDF.coalesce(2).write.parquet(dbfs_dest_dir_path_raw)
 
 display(dbutils.fs.ls(dbfs_dest_dir_path_raw))
 
+# COMMAND ----------
 
-
+# MAGIC %md
+# MAGIC ### 4. Write to delta table
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 4. Define external table
+# MAGIC #### Define table names, and set spark vars to inject in sql queries
 
 # COMMAND ----------
 
-crime = dblname(db="crime")
+chicago_crimes_raw = tblname(db="crime", tbl="chicago_crimes_raw")
+chicago_crimes_curated = tblname(db="crime", tbl="chicago_crimes_curated")
+crime = dbname(db="crime")
 print("crime:" + repr(crime))
 spark.conf.set("nbvars.crime", crime)
 chicago_crimes_raw = tblname(db="crime", tbl="chicago_crimes_raw")
@@ -99,18 +103,24 @@ spark.conf.set("nbvars.dbfs_dest_dir_path_raw", dbfs_dest_dir_path_raw)
 
 # COMMAND ----------
 
-# MAGIC %sql
+# MAGIC %md
 # MAGIC
-# MAGIC CREATE DATABASE IF NOT EXISTS ${nbvars.crime};
-# MAGIC
-# MAGIC USE ${nbvars.crime};
-# MAGIC
-# MAGIC DROP TABLE IF EXISTS ${nbvars.chicago_crimes_raw};
-# MAGIC CREATE TABLE IF NOT EXISTS ${nbvars.chicago_crimes_raw}
-# MAGIC USING parquet
-# MAGIC OPTIONS (path "${nbvars.dbfs_dest_dir_path_raw}");
-# MAGIC
-# MAGIC ANALYZE TABLE ${nbvars.chicago_crimes_raw} COMPUTE STATISTICS;
+# MAGIC #### Coalesce data and view schema
+# MAGIC Coalesce reduces amount of partitions to make write more efficient
+
+# COMMAND ----------
+
+coalesced = sourceDF.coalesce(2)
+coalesced.schema
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #### Write raw data to new unity catalog table
+
+# COMMAND ----------
+
+coalesced.write.mode("overwrite").format("delta").saveAsTable(chicago_crimes_raw)
 
 # COMMAND ----------
 
@@ -120,8 +130,6 @@ spark.conf.set("nbvars.dbfs_dest_dir_path_raw", dbfs_dest_dir_path_raw)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC USE crimes_db;
-# MAGIC --SELECT * FROM ${nbvars.chicago_crimes_raw};
 # MAGIC SELECT count(*) FROM ${nbvars.chicago_crimes_raw};
 # MAGIC
 # MAGIC --6,701,049
@@ -129,7 +137,7 @@ spark.conf.set("nbvars.dbfs_dest_dir_path_raw", dbfs_dest_dir_path_raw)
 # COMMAND ----------
 
 # MAGIC  %md
-# MAGIC  ### 6. Curate the dataset
+# MAGIC ### 6. Curate the dataset
 # MAGIC  In this section, we will just parse the date and time for the purpose of analytics.
 
 # COMMAND ----------
@@ -137,62 +145,30 @@ spark.conf.set("nbvars.dbfs_dest_dir_path_raw", dbfs_dest_dir_path_raw)
 # 1) Read and curate
 # Lets add some temporal attributes that can help us analyze trends over time
 
-#from pyspark.sql.types import StructType, StructField, StringType, IntegerType,LongType,FloatType,DoubleType, TimestampType, DecimalType
-#from pyspark.sql.functions import to_timestamp, year, month, dayofmonth, udf
-
-def get_day_name_from_weekday_nbr(weekday):
-    if weekday == 0:
-        return "Monday"
-    if weekday == 1:
-        return "Tuesday"
-    if weekday == 2:
-        return "Wednesday"
-    if weekday == 3:
-        return "Thursday"
-    if weekday == 4:
-        return "Friday"
-    if weekday == 5:
-        return "Saturday"
-    if weekday == 6:
-        return "Sunday"
-
-udf_get_day_name_from_weekday_nbr = udf(get_day_name_from_weekday_nbr, StringType())
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType,LongType,FloatType,DoubleType, TimestampType, DecimalType
+from pyspark.sql.functions import to_timestamp, year, month, dayofmonth, udf
 
 # Temp view names are local to notebooks
 spark.sql(f"select * from {chicago_crimes_raw}").withColumn(
     "case_timestamp",
-    to_timestamp("case_dt_tm","MM/dd/yyyy hh:mm:ss")).createOrReplaceTempView("raw_crimes")
+    to_timestamp("case_dt_tm","MM/dd/yyyy hh:mm:ss a")).createOrReplaceTempView("raw_crimes")
 curated_initial_df = spark.sql("select *, month(case_timestamp) as case_month,dayofmonth(case_timestamp) as case_day_of_month, hour(case_timestamp) as case_hour, dayofweek(case_timestamp) as case_day_of_week_nbr from raw_crimes")
-curated_df = curated_initial_df.withColumn("case_day_of_week_name",
-                                           udf_get_day_name_from_weekday_nbr("case_day_of_week_nbr"))
+curated_df = curated_initial_df
 
 display(curated_df)
 
 
 # COMMAND ----------
 
-# 2) Persist as parquet to curated storage zone
+# 2) Persist as parquet to curated storage zone, 
 dbfs_dest_dir_path_curated = f"/mnt/workshop/users/{uname}/curated/crimes/chicago-crimes"
 dbutils.fs.rm(dbfs_dest_dir_path_curated, recurse=True)
 curated_df.coalesce(1).write.partitionBy("case_year","case_month").parquet(dbfs_dest_dir_path_curated)
 
-spark.conf.set("nbvars.dbfs_dest_dir_path_curated", dbfs_dest_dir_path_curated)
-
-
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC CREATE DATABASE IF NOT EXISTS ${nbvars.crime};
-# MAGIC
-# MAGIC USE ${nbvars.crime};
-# MAGIC
-# MAGIC DROP TABLE IF EXISTS ${nbvars.chicago_crimes_curated};
-# MAGIC CREATE TABLE ${nbvars.chicago_crimes_curated}
-# MAGIC USING parquet
-# MAGIC OPTIONS (path "${nbvars.dbfs_dest_dir_path_curated}");
-# MAGIC
-# MAGIC MSCK REPAIR TABLE ${nbvars.chicago_crimes_curated};
-# MAGIC ANALYZE TABLE ${nbvars.chicago_crimes_curated} COMPUTE STATISTICS;
+# 3) Write to new unity catalog table
+curated_df.write.mode("overwrite").format("delta").saveAsTable(chicago_crimes_curated)
 
 # COMMAND ----------
 
@@ -207,9 +183,10 @@ spark.conf.set("nbvars.dbfs_dest_dir_path_curated", dbfs_dest_dir_path_curated)
 
 # COMMAND ----------
 
-# MAGIC  %md
-# MAGIC  ### 7. Report on the dataset/visualize
-# MAGIC  In this section, we will explore data and visualize
+# MAGIC %md
+# MAGIC
+# MAGIC ### 7. Report on the dataset/visualize
+# MAGIC In this section, we will explore data and visualize
 
 # COMMAND ----------
 
@@ -241,3 +218,7 @@ spark.conf.set("nbvars.dbfs_dest_dir_path_curated", dbfs_dest_dir_path_curated)
 # MAGIC from ${nbvars.chicago_crimes_curated}
 # MAGIC where (primary_type LIKE '%ASSAULT%' OR primary_type LIKE '%CHILD%') OR (primary_type='KIDNAPPING')
 # MAGIC GROUP BY case_type;
+
+# COMMAND ----------
+
+
