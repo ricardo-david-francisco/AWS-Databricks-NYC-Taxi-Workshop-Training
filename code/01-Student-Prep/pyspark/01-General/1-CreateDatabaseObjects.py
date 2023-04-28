@@ -36,8 +36,5 @@ spark.conf.set("nbvars.taxi_db", taxi_db)
 # COMMAND ----------
 
 # MAGIC %sql
+# MAGIC USE CATALOG training;
 # MAGIC SHOW DATABASES;
-
-# COMMAND ----------
-
-display(spark.catalog.listDatabases())
