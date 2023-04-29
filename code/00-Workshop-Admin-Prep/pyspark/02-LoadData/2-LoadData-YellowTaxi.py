@@ -308,10 +308,43 @@ for j in range(2016,2018):
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC
+# MAGIC ## Create table in training catalog
+# MAGIC
+# MAGIC Use clone command, to avoid error `[RequestId=77d88b3b-9848-9715-8fa6-849fea01afc8 ErrorClass=INVALID_PARAMETER_VALUE] Missing cloud file system scheme`. Should be fixed more elegantly.
+# MAGIC
+# MAGIC From dbricks forum: "It seems like there may be a permission issue with the USE CATALOG and USE SCHEMA statements in your code. This suggests that the user account that you are using to run the code may not have sufficient privileges to access the specified catalog and schema."
+
+# COMMAND ----------
+
 # MAGIC %sql
+# MAGIC CREATE OR REPLACE TABLE training.taxinyc_trips.yellow_taxi_trips_raw 
+# MAGIC CLONE hive_metastore.taxinyc_trips.yellow_taxi_trips_raw;
+
+# COMMAND ----------
+
+# # Failing command due Missing cloud file system scheme
+# %sql 
+# use catalog training;
+# create schema IF NOT EXISTS taxinyc_trips;
+# use schema taxinyc_trips;
+# DROP TABLE IF EXISTS yellow_taxi_trips_raw;
+# CREATE TABLE IF NOT EXISTS yellow_taxi_trips_raw
+# USING DELTA
+# LOCATION '/mnt/workshop/raw/nyctaxi/transactions/yellow-taxi/';
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC use catalog training;
 # MAGIC select * from taxinyc_trips.yellow_taxi_trips_raw;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC select count(*) from from taxinyc_trips.yellow_taxi_trips_raw;
+
+# COMMAND ----------
+
+
