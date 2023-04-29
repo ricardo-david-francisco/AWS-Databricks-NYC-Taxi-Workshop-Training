@@ -378,7 +378,7 @@ display(filtered_df)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 10. Code based visualization
+# MAGIC ## 10. Code based visualization example
 # MAGIC
 # MAGIC Plotly supports a huge variation of code-based visualizations
 
@@ -404,4 +404,8 @@ p = plot(
 )
  
 displayHTML(p)
+
+
+# COMMAND ----------
+
 
