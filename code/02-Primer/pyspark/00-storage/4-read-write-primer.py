@@ -2,14 +2,13 @@
 # MAGIC %md
 # MAGIC # DBFS - read/write primer
 # MAGIC In this exercise, we will:<br>
-# MAGIC 1.  **Download** and curate Chicago crimes public dataset  - 1.5 GB of the Chicago crimes public dataset - has 6.7 million records.<BR>
-# MAGIC 2.  **Upload the dataset to DBFS**, to the staging directory in DBFS<BR>
-# MAGIC 3.  Read the CSV into a dataframe, **persist as parquet** to the raw directory<BR>
-# MAGIC 4.  **Write the data frame into a unity catalog table**<BR>
-# MAGIC 5.  **Explore with SQL construct**<BR>
-# MAGIC 6.  **Curate** the dataset (dedupe, add additional dervived attributes of value etc) for subsequent labs<BR>
-# MAGIC 7.  Do some basic **visualization**<BR>
-# MAGIC   
+# MAGIC 1.  Read Chicago crimes public dataset from csv - 1.5 GB of the Chicago crimes public dataset - has 6.7 million records.<BR>
+# MAGIC 2.  Read the CSV into a dataframe, **persist as parquet** to the raw directory<BR>
+# MAGIC 3.  **Write the data frame into a unity catalog table**<BR>
+# MAGIC 4.  **Explore with SQL construct**<BR>
+# MAGIC 5.  **Curate** the dataset (dedupe, add additional dervived attributes of value etc) for subsequent labs<BR>
+# MAGIC 6.  Do some basic **visualization**<BR>
+# MAGIC
 # MAGIC Chicago crimes dataset:<br>
 # MAGIC Website: https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-present/ijzp-q8t2<br>
 # MAGIC Dataset: https://data.cityofchicago.org/api/views/ijzp-q8t2/rows.csv?accessType=DOWNLOAD<br>
@@ -17,7 +16,6 @@
 # MAGIC   
 # MAGIC Referenes for Databricks:<br>
 # MAGIC Visualization: https://docs.databricks.com/user-guide/visualizations/charts-and-graphs-scala.html
-# MAGIC   
 
 # COMMAND ----------
 
@@ -31,16 +29,10 @@ dbfs_src_dir_path = f"/mnt/workshop/staging/crimes/chicago-crimes"
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 2.  Upload from driver node to DBFS
+# MAGIC ### 2.  Ensure source data in dbfs is available
 
 # COMMAND ----------
 
-# 1) Create destination directory
-
-# 3) Clean up local directory
-# dbutils.fs.rm(localFile)
-
-# 4) List dbfs_dir_path
 display(dbutils.fs.ls(dbfs_src_dir_path))
 
 # COMMAND ----------
@@ -68,6 +60,17 @@ display(sourceDF)
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ### Persist the dataset to parquet
+# MAGIC
+# MAGIC Parquet is an open-source binary format to store columnar and unstructured data, like csv, tables or json,
+# MAGIC in an efficient and type safe manner.
+# MAGIC
+# MAGIC This enables consumption outside of unity catalog.
+# MAGIC Not necessary to persist our data in delta lake format, but can be useful for other use cases.
+
+# COMMAND ----------
+
 # 5) Persist as parquet to raw zone
 dbutils.fs.rm(dbfs_dest_dir_path_raw, recurse=True)
 sourceDF.coalesce(2).write.parquet(dbfs_dest_dir_path_raw)
@@ -79,7 +82,7 @@ display(dbutils.fs.ls(dbfs_dest_dir_path_raw))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 4. Write to delta table
+# MAGIC ### 4. Write to delta lake table in unity catalog
 
 # COMMAND ----------
 
@@ -155,8 +158,23 @@ spark.sql(f"select * from {chicago_crimes_raw}").withColumn(
 curated_initial_df = spark.sql("select *, month(case_timestamp) as case_month,dayofmonth(case_timestamp) as case_day_of_month, hour(case_timestamp) as case_hour, dayofweek(case_timestamp) as case_day_of_week_nbr from raw_crimes")
 curated_df = curated_initial_df
 
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC
+# MAGIC #### Inspect the data set with pyspark display function
+
+# COMMAND ----------
+
 display(curated_df)
 
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #### Persist curated data to parquet
+# MAGIC
+# MAGIC This enables consumption outside of unity catalog.
+# MAGIC Not necessary to persist data in delta lake format, but can be useful for other use cases.
 
 # COMMAND ----------
 
@@ -167,13 +185,28 @@ curated_df.coalesce(1).write.partitionBy("case_year","case_month").parquet(dbfs_
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC #### Persist curate data to delta lake table in unity catalog
+
+# COMMAND ----------
+
 # 3) Write to new unity catalog table
 curated_df.write.mode("overwrite").format("delta").saveAsTable(chicago_crimes_curated)
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC #### Inspect schema with describe command
+
+# COMMAND ----------
+
 # MAGIC %sql
 # MAGIC describe formatted ${nbvars.chicago_crimes_curated};
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #### Inspect data with sql
 
 # COMMAND ----------
 
