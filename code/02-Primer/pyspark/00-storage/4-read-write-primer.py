@@ -53,7 +53,11 @@ dbutils.fs.head(dbfs_src_dir_path + "/chicago-crimes.csv")
 # COMMAND ----------
 
 # 4)  Read raw CSV
-sourceDF = spark.read.format("csv").options(header='true', delimiter = ',').load(dbfs_src_dir_path).toDF("case_id", "case_nbr", "case_dt_tm", "block", "iucr", "primary_type", "description", "location_description", "arrest_made", "was_domestic", "beat", "district", "ward", "community_area", "fbi_code", "x_coordinate", "y_coordinate", "case_year", "updated_dt", "latitude", "longitude", "location_coords")
+sourceDF = (spark.read.format("csv")
+    .options(header='true', delimiter = ',')
+    .load(dbfs_src_dir_path).toDF(  # Pass field names for columns
+        "case_id", "case_nbr", "case_dt_tm", "block", "iucr", "primary_type", "description", "location_description", "arrest_made", "was_domestic", "beat", "district", "ward", "community_area", "fbi_code", "x_coordinate", "y_coordinate", "case_year", "updated_dt", "latitude", "longitude", "location_coords")
+)
 
 sourceDF.printSchema()
 display(sourceDF)
@@ -87,18 +91,31 @@ display(dbutils.fs.ls(dbfs_dest_dir_path_raw))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC #### Define table names, and set spark vars to inject in sql queries
+# MAGIC #### Define Unity Catalog table names, set spark vars for use in sql queries
+# MAGIC
+# MAGIC `dbname()` and `tblname()` generate env and user specific dev-table names.
+# MAGIC This enables us to develop our code without interrupting production env nor other users.
+# MAGIC An example data set name is `training.dev_paldevibe_crime.chicago_crimes_raw`.
+# MAGIC
+# MAGIC Notice that this uses delta catalog three level structure:
+# MAGIC
+# MAGIC * catalog: `training`
+# MAGIC * db/schema: `dev_paldevibe_crime`
+# MAGIC * table: `chicago_crimes_raw`
 
 # COMMAND ----------
 
-chicago_crimes_raw = tblname(db="crime", tbl="chicago_crimes_raw")
-chicago_crimes_curated = tblname(db="crime", tbl="chicago_crimes_curated")
+# db name
 crime = dbname(db="crime")
 print("crime:" + repr(crime))
 spark.conf.set("nbvars.crime", crime)
+
+# chicago_crimes_raw table name
 chicago_crimes_raw = tblname(db="crime", tbl="chicago_crimes_raw")
 print("chicago_crimes_raw:" + repr(chicago_crimes_raw))
 spark.conf.set("nbvars.chicago_crimes_raw", chicago_crimes_raw)
+
+# chicago_crimes_curated table name
 chicago_crimes_curated = tblname(db="crime", tbl="chicago_crimes_curated")
 print("chicago_crimes_curated:" + repr(chicago_crimes_curated))
 spark.conf.set("nbvars.chicago_crimes_curated", chicago_crimes_curated)
@@ -128,7 +145,7 @@ coalesced.write.mode("overwrite").format("delta").saveAsTable(chicago_crimes_raw
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 5. Explore the raw dataset
+# MAGIC ### 5. Explore the raw dataset with sql
 
 # COMMAND ----------
 
