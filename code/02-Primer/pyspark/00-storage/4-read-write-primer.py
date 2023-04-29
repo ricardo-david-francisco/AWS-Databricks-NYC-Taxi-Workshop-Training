@@ -126,11 +126,13 @@ spark.conf.set("nbvars.dbfs_dest_dir_path_raw", dbfs_dest_dir_path_raw)
 # MAGIC %md
 # MAGIC
 # MAGIC #### Coalesce data and view schema
-# MAGIC Coalesce reduces amount of partitions to make write more efficient
+# MAGIC Coalesce reduces or increases amount of partitions to make write more efficient.
+# MAGIC We split into 8 partitions to better distribute writing.
 
 # COMMAND ----------
 
-coalesced = sourceDF.coalesce(2)
+coalesced = sourceDF.coalesce(8)
+# show schema with pyspark
 coalesced.schema
 
 # COMMAND ----------
@@ -168,11 +170,17 @@ coalesced.write.mode("overwrite").format("delta").saveAsTable(chicago_crimes_raw
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType,LongType,FloatType,DoubleType, TimestampType, DecimalType
 from pyspark.sql.functions import to_timestamp, year, month, dayofmonth, udf
 
-# Temp view names are local to notebooks
+# Temp view names are local to notebooks, we create one called raw_crimes here
 spark.sql(f"select * from {chicago_crimes_raw}").withColumn(
     "case_timestamp",
     to_timestamp("case_dt_tm","MM/dd/yyyy hh:mm:ss a")).createOrReplaceTempView("raw_crimes")
-curated_initial_df = spark.sql("select *, month(case_timestamp) as case_month,dayofmonth(case_timestamp) as case_day_of_month, hour(case_timestamp) as case_hour, dayofweek(case_timestamp) as case_day_of_week_nbr from raw_crimes")
+curated_initial_df = (spark.sql("""
+SELECT *, 
+month(case_timestamp) as case_month,
+dayofmonth(case_timestamp) as case_day_of_month, 
+hour(case_timestamp) as case_hour, 
+dayofweek(case_timestamp) as case_day_of_week_nbr from raw_crimes""")
+)
 curated_df = curated_initial_df
 
 # COMMAND ----------
