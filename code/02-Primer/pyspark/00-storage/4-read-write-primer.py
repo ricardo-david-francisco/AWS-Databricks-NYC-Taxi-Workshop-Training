@@ -148,6 +148,8 @@ coalesced.write.mode("overwrite").format("delta").saveAsTable(chicago_crimes_raw
 
 # MAGIC %md
 # MAGIC ### 5. Explore the raw dataset with sql
+# MAGIC
+# MAGIC Use injected var for dynamic table naming.
 
 # COMMAND ----------
 
@@ -188,6 +190,7 @@ curated_df = curated_initial_df
 # MAGIC %md
 # MAGIC
 # MAGIC #### Inspect the data set with pyspark display function
+# MAGIC Most functionality is available both in sql and pyspark (and scala spark)
 
 # COMMAND ----------
 
@@ -206,7 +209,7 @@ display(curated_df)
 # 2) Persist as parquet to curated storage zone, 
 dbfs_dest_dir_path_curated = f"/mnt/workshop/users/{uname}/curated/crimes/chicago-crimes"
 dbutils.fs.rm(dbfs_dest_dir_path_curated, recurse=True)
-curated_df.coalesce(1).write.partitionBy("case_year","case_month").parquet(dbfs_dest_dir_path_curated)
+curated_df.write.partitionBy("case_year","case_month").parquet(dbfs_dest_dir_path_curated)
 
 # COMMAND ----------
 
@@ -221,7 +224,7 @@ curated_df.write.mode("overwrite").format("delta").saveAsTable(chicago_crimes_cu
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC #### Inspect schema with describe command
+# MAGIC #### Inspect schema with sql describe command
 
 # COMMAND ----------
 
@@ -248,9 +251,29 @@ curated_df.write.mode("overwrite").format("delta").saveAsTable(chicago_crimes_cu
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC #### Group by case_year in sql
+
+# COMMAND ----------
+
 # MAGIC %sql
 # MAGIC SELECT case_year, count(*) AS crime_count FROM ${nbvars.chicago_crimes_curated}
 # MAGIC GROUP BY case_year ORDER BY case_year;
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #### Group by case_year in pyspark
+
+# COMMAND ----------
+
+grouped_by_year_df = curated_df.groupBy("case_year").count().orderBy("case_year")
+display(grouped_by_year_df)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #### Group by case_year, primary_type, filter on specific types, using sql
 
 # COMMAND ----------
 
@@ -259,6 +282,12 @@ curated_df.write.mode("overwrite").format("delta").saveAsTable(chicago_crimes_cu
 # MAGIC FROM ${nbvars.chicago_crimes_curated}
 # MAGIC where primary_type in ('BATTERY','ASSAULT','CRIMINAL SEXUAL ASSAULT')
 # MAGIC GROUP BY case_year,primary_type ORDER BY case_year;
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC %md
+# MAGIC #### Filter on parts of string in crime type
 
 # COMMAND ----------
 
