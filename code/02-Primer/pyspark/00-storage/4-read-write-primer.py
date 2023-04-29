@@ -19,6 +19,9 @@
 
 # COMMAND ----------
 
+# Import pyspark utility functions
+from pyspark.sql import functions as F
+# Name functions enables automatic env+user specific database naming
 from libs.dbname import dbname
 from libs.tblname import tblname, username
 uname = username(dbutils)
@@ -282,6 +285,26 @@ display(grouped_by_year_df)
 # MAGIC FROM ${nbvars.chicago_crimes_curated}
 # MAGIC where primary_type in ('BATTERY','ASSAULT','CRIMINAL SEXUAL ASSAULT')
 # MAGIC GROUP BY case_year,primary_type ORDER BY case_year;
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #### Group by case_year, primary_type, filter on specific types, using pyspark
+
+# COMMAND ----------
+
+from pyspark.sql import functions as F
+
+# COMMAND ----------
+
+filtered_df = (
+    curated_df.select(
+        F.to_date(F.col("case_year").cast("string")).alias("case_year"),
+        F.col("primary_type").alias("case_type"),
+        F.count().alias("crime_count")
+    ).where(F.col("primary_type").isin("BATTERY", "ASSAULT", "CRIMINAL SEXUAL ASSAULT"))
+    .groupBy("case_year", "primary_type").orderBy("case_year")
+display(filtered_df)
 
 # COMMAND ----------
 
