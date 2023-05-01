@@ -7,7 +7,8 @@
 # MAGIC 3.  **Write the data frame into a unity catalog table**<BR>
 # MAGIC 4.  **Explore with SQL construct**<BR>
 # MAGIC 5.  **Curate** the dataset (dedupe, add additional dervived attributes of value etc) for subsequent labs<BR>
-# MAGIC 6.  Do some basic **visualization**<BR>
+# MAGIC 6.  **Explore** the data set<BR>
+# MAGIC 7.  Do some basic **visualization**<BR>
 # MAGIC
 # MAGIC Chicago crimes dataset:<br>
 # MAGIC Website: https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-present/ijzp-q8t2<br>
@@ -15,10 +16,13 @@
 # MAGIC Metadata: https://cosmosdbworkshops.blob.core.windows.net/metadata/ChicagoCrimesMetadata.pdf<br>
 # MAGIC   
 # MAGIC Referenes for Databricks:<br>
-# MAGIC Visualization: https://docs.databricks.com/user-guide/visualizations/charts-and-graphs-scala.html
+# MAGIC Visualization: https://docs.databricks.com/visualizations/charts-and-graphs-python.html
 
 # COMMAND ----------
 
+# Import pyspark utility functions
+from pyspark.sql import functions as F
+# Name functions enables automatic env+user specific database naming
 from libs.dbname import dbname
 from libs.tblname import tblname, username
 uname = username(dbutils)
@@ -246,8 +250,8 @@ curated_df.write.mode("overwrite").format("delta").saveAsTable(chicago_crimes_cu
 
 # MAGIC %md
 # MAGIC
-# MAGIC ### 7. Report on the dataset/visualize
-# MAGIC In this section, we will explore data and visualize
+# MAGIC ### 7. Explore the dataset
+# MAGIC In this section, we will explore data
 
 # COMMAND ----------
 
@@ -281,13 +285,30 @@ display(grouped_by_year_df)
 # MAGIC SELECT cast(cast(case_year as string) as date) as case_year, primary_type as case_type, count(*) AS crime_count
 # MAGIC FROM ${nbvars.chicago_crimes_curated}
 # MAGIC where primary_type in ('BATTERY','ASSAULT','CRIMINAL SEXUAL ASSAULT')
-# MAGIC GROUP BY case_year,primary_type ORDER BY case_year;
+# MAGIC GROUP BY case_year,primary_type ORDER BY case_year, case_type;
 
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC #### Group by case_year, primary_type, filter on specific types, using pyspark
+
+# COMMAND ----------
+
+filtered_df = (
+    curated_df.select(
+        F.to_date(F.col("case_year").cast("string")).alias("case_year"),
+        F.col("primary_type").alias("case_type")
+    ).where(F.col("primary_type").isin("BATTERY", "ASSAULT", "CRIMINAL SEXUAL ASSAULT"))
+    .groupBy("case_year", "case_type")
+    .count()
+    .orderBy("case_year", "case_type")
+)
+display(filtered_df)
+
+# COMMAND ----------
+
 # MAGIC %md
-# MAGIC #### Filter on parts of string in crime type
+# MAGIC #### Filter on parts of string in crime type, in sql
 
 # COMMAND ----------
 
@@ -300,11 +321,90 @@ display(grouped_by_year_df)
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC #### Add or condition, in sql
+
+# COMMAND ----------
+
 # MAGIC %sql
 # MAGIC select primary_type as case_type, count(*) as crimes_count
 # MAGIC from ${nbvars.chicago_crimes_curated}
 # MAGIC where (primary_type LIKE '%ASSAULT%' OR primary_type LIKE '%CHILD%') OR (primary_type='KIDNAPPING')
 # MAGIC GROUP BY case_type;
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #### Add or condition, in pyspark
+
+# COMMAND ----------
+
+filtered_df = (
+    curated_df.select(
+        F.to_date(F.col("case_year").cast("string")).alias("case_year"),
+        F.col("primary_type").alias("case_type")
+    ).where(
+        (F.col("primary_type").isin("BATTERY", "ASSAULT", "CRIMINAL SEXUAL ASSAULT")) |
+        (F.col("primary_type") == "KIDNAPPING")
+    )
+    .groupBy("case_year", "case_type")
+    .count()
+    .orderBy("case_year", "case_type")
+)
+display(filtered_df)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 8. Visualize count distribution
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 1. Press pluss button next to Table above the table visualization in the previous cell.
+# MAGIC 2. Select visualization.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 9. Profile the data
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 1. Press pluss button next to Table above the table visualization in the previous cell.
+# MAGIC 2. Select Data Profile.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 10. Code based visualization example
+# MAGIC
+# MAGIC Plotly supports a huge variation of code-based visualizations
+
+# COMMAND ----------
+
+from plotly.offline import plot
+from plotly.graph_objs import *
+import numpy as np
+ 
+x = np.random.randn(2000)
+y = np.random.randn(2000)
+ 
+# Instead of simply calling plot(...), store your plot as a variable and pass it to displayHTML().
+# Make sure to specify output_type='div' as a keyword argument.
+# (Note that if you call displayHTML() multiple times in the same cell, only the last will take effect.)
+ 
+p = plot(
+  [
+    Histogram2dContour(x=x, y=y, contours=Contours(coloring='heatmap')),
+    Scatter(x=x, y=y, mode='markers', marker=Marker(color='white', size=3, opacity=0.3))
+  ],
+  output_type='div'
+)
+ 
+displayHTML(p)
+
 
 # COMMAND ----------
 

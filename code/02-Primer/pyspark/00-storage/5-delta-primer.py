@@ -4,14 +4,31 @@
 # MAGIC
 # MAGIC ### What's in this exercise?
 # MAGIC In this exercise, we will complete the following in **batch** (streaming covered in the event hub primer):<br>
-# MAGIC 1.  Create a dataset, persist in Delta format to DBFS backed by S3 Blob Storage, create a Delta table on top of the dataset<br>
+# MAGIC
+# MAGIC 1.  Create a dataset, persist in Delta format to Unity Catalog<br>
 # MAGIC 2.  Update one or two random records<br>
 # MAGIC 3.  Delete one or two records<br>
 # MAGIC 4.  Add a couple new columns to the data and understand considerations for schema evolution<br>
-# MAGIC 4.  Discuss Databricks Delta's value proposition, and positioning in your big data architecture<br>
 # MAGIC
 # MAGIC References:
 # MAGIC https://docs.azuredatabricks.net/delta/index.html<br>
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ##What is Delta Lake?
+# MAGIC
+# MAGIC
+# MAGIC * **Delta lake is the default storage format for Databricks.**
+# MAGIC * **If you use only parquet or json-files to store data in your s3 data lake, you must manually handle updates and deletes. Delta Lake solves it.**
+# MAGIC
+# MAGIC Delta Lake is an open-source storage layer designed to run on top of an existing data lake and improve its reliability, security, and performance. Delta Lakes support ACID transactions, scalable metadata, unified streaming, and batch data processing.
+
+# COMMAND ----------
+
+# Load libs for db and table naming
+from libs.dbname import dbname
+from libs.tblname import tblname
 
 # COMMAND ----------
 
@@ -24,10 +41,6 @@
 # MAGIC #### 1.0.1. Create some data
 
 # COMMAND ----------
-
-from libs.dbname import dbname
-from libs.tblname import tblname, username
-uname = username(dbutils)
 
 columns = ["book_id", "book_author", "book_name", "book_pub_year"]
 vals = [
@@ -43,34 +56,12 @@ display(books_df)
 
 # COMMAND ----------
 
-# MAGIC  %md
-# MAGIC  #### 1.0.2. Persist to Delta format
+# MAGIC %md
+# MAGIC #### 1.0.2. Persist to Delta format
 
 # COMMAND ----------
 
-# Destination directory for Delta table
-delta_table_directory = f"/mnt/workshop/users/{uname}/curated/books"
-dbutils.fs.rm(delta_table_directory, recurse=True)
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC drop table if exists books_db.books;
-
-# COMMAND ----------
-
-# Persist dataframe to delta format without coalescing
-books_df.write.format("delta").save(delta_table_directory)
-spark.conf.set("nbvars.delta_table_directory", delta_table_directory)
-
-# COMMAND ----------
-
-# MAGIC  %md
-# MAGIC  #### 1.0.3. Create Delta table
-
-# COMMAND ----------
-
-books_db = dblname(db="books")
+books_db = dbname(db="books")
 spark.conf.set("nbvars.books_db", books_db)
 books_tbl = tblname(db="books", tbl="books")
 print("books_tbl:" + repr(books_tbl))
@@ -78,32 +69,36 @@ spark.conf.set("nbvars.books_tbl", books_tbl)
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC CREATE DATABASE IF NOT EXISTS ${nbvars.books_db};
-# MAGIC
-# MAGIC USE ${nbvars.books_db};
-# MAGIC DROP TABLE IF EXISTS ${nbvars.books_tbl};
-# MAGIC CREATE TABLE ${nbvars.books_tbl}
-# MAGIC USING DELTA
-# MAGIC LOCATION "${nbvars.delta_table_directory}";
+# MAGIC %md
+# MAGIC #### 1.0.3. Create Delta table
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC select * from ${nbvars.books_tbl};
+# MAGIC drop table if exists ${nbvars.books_tbl};
+
+# COMMAND ----------
+
+# Persist dataframe to delta format without coalescing
+books_df.write.mode("overwrite").format("delta").saveAsTable(books_tbl)
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC Select count(*) from ${nbvars.books_tbl};
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT * from ${nbvars.books_tbl};
 
 # COMMAND ----------
 
 # MAGIC  %md
-# MAGIC  #### 1.0.4. Performance optimization
+# MAGIC #### 1.0.4. Performance optimization
 # MAGIC  
-# MAGIC  We will run the "OPTIMIZE" command to compact small files into larger for performance.
-# MAGIC  Note: The performance improvements are evident at scale
-
-# COMMAND ----------
-
-# 1) Lets look at part file count, its 5
-display(dbutils.fs.ls(delta_table_directory))
+# MAGIC We will run the "OPTIMIZE" command to compact small files into larger for performance.
+# MAGIC Note: The performance improvements are evident at scale
 
 # COMMAND ----------
 
@@ -113,7 +108,7 @@ preDeltaOptimizeDF.rdd.getNumPartitions()
 
 # COMMAND ----------
 
-# MAGIC %sql DESCRIBE DETAIL books_db.books;
+# MAGIC %sql DESCRIBE DETAIL ${nbvars.books_tbl};
 # MAGIC --3) Lets run DESCRIBE DETAIL 
 # MAGIC --Notice that numFiles = 5
 
@@ -121,19 +116,13 @@ preDeltaOptimizeDF.rdd.getNumPartitions()
 
 # MAGIC %sql
 # MAGIC --4) Now, lets run optimize
-# MAGIC USE books_db;
+# MAGIC USE ${nbvars.books_db};
 # MAGIC OPTIMIZE books;
 
 # COMMAND ----------
 
-# MAGIC %sql DESCRIBE DETAIL books_db.books;
+# MAGIC %sql DESCRIBE DETAIL ${nbvars.books_tbl};
 # MAGIC --5) Notice the number of files now - its 1 file
-
-# COMMAND ----------
-
-# 6) Lets look at the part file count, its 6 now!
-# Guess why?
-display(dbutils.fs.ls(delta_table_directory))
 
 # COMMAND ----------
 
@@ -142,30 +131,6 @@ postDeltaOptimizeDF = spark.sql(f"select * from {books_tbl}")
 postDeltaOptimizeDF.rdd.getNumPartitions()
 #Its 1, and not 6
 #Guess why?
-
-# COMMAND ----------
-
-# MAGIC %sql 
-# MAGIC --8a) Lets do some housekeeping now
-# MAGIC set spark.databricks.delta.retentionDurationCheck.enabled = false
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC --8b) Run vacuum
-# MAGIC VACUUM books_db.books retain 0 hours;
-
-# COMMAND ----------
-
-# 9) Lets look at the part file count, its 1 now!
-display(dbutils.fs.ls(delta_table_directory))
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC **Learnings:**<br>
-# MAGIC OPTIMIZE compacts small files into larger ones but does not do housekeeping.<br>
-# MAGIC VACUUM does the housekeeping of the small files from prior to compaction, and more.<br>
 
 # COMMAND ----------
 
@@ -190,7 +155,7 @@ display(books_df)
 
 # COMMAND ----------
 
-books_df.write.format("delta").mode("append").save(delta_table_directory)
+books_df.write.mode("append").format("delta").saveAsTable(books_tbl)
 
 # COMMAND ----------
 
@@ -201,7 +166,12 @@ books_df.write.format("delta").mode("append").save(delta_table_directory)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC Select * from books_db.books;
+# MAGIC Select count(*) from ${nbvars.books_tbl};
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC Select * from ${nbvars.books_tbl};
 
 # COMMAND ----------
 
@@ -210,23 +180,26 @@ books_df.write.format("delta").mode("append").save(delta_table_directory)
 
 # COMMAND ----------
 
-# MAGIC %sql DESCRIBE DETAIL books_db.books;
+# MAGIC %sql DESCRIBE DETAIL ${nbvars.books_tbl};
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC 2.4. Optimize
+# MAGIC 2.4. Optimize and Vacuum
+# MAGIC Vacuum will remove small left over files (garbage)
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC OPTIMIZE books_db.books;
-# MAGIC VACUUM books_db.books;
+# MAGIC OPTIMIZE ${nbvars.books_tbl}; -- compact into fewer files
+# MAGIC VACUUM ${nbvars.books_tbl}; -- remove small left over garbage files
 
 # COMMAND ----------
 
 # MAGIC %md 
 # MAGIC ## 3.0. Update/upsert operation
+# MAGIC
+# MAGIC Update some rows
 
 # COMMAND ----------
 
@@ -253,8 +226,8 @@ booksUpsertDF.createOrReplaceTempView("books_upserts")
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC --3) Execute upsert
-# MAGIC USE books_db;
+# MAGIC -- 3) Execute upsert
+# MAGIC USE ${nbvars.books_db};
 # MAGIC
 # MAGIC MERGE INTO books
 # MAGIC USING books_upserts
@@ -271,25 +244,20 @@ booksUpsertDF.createOrReplaceTempView("books_upserts")
 
 # MAGIC %sql
 # MAGIC --4) Validate
-# MAGIC Select * from books_db.books;
-
-# COMMAND ----------
-
-# 5) Files? How many?
-display(dbutils.fs.ls(delta_table_directory))
+# MAGIC select * from ${nbvars.books_tbl};
 
 # COMMAND ----------
 
 # MAGIC %sql 
 # MAGIC -- 6) What does describe detail say?
-# MAGIC DESCRIBE DETAIL books_db.books;
+# MAGIC DESCRIBE DETAIL ${nbvars.books_tbl};
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC -- 7) Lets optimize 
-# MAGIC OPTIMIZE books_db.books;
-# MAGIC VACUUM books_db.books;
+# MAGIC OPTIMIZE ${nbvars.books_tbl};
+# MAGIC VACUUM ${nbvars.books_tbl};
 
 # COMMAND ----------
 
@@ -300,13 +268,13 @@ display(dbutils.fs.ls(delta_table_directory))
 
 # MAGIC %sql
 # MAGIC --1) Lets isolate records to delete
-# MAGIC select * from books_db.books where book_pub_year>=1900;
+# MAGIC select * from ${nbvars.books_tbl} where book_pub_year>=1900;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC --2) Execute delete
-# MAGIC USE books_db;
+# MAGIC USE ${nbvars.books_db};
 # MAGIC
 # MAGIC DELETE FROM books where book_pub_year >= 1900;
 
@@ -314,19 +282,19 @@ display(dbutils.fs.ls(delta_table_directory))
 
 # MAGIC %sql
 # MAGIC --3) Lets validate
-# MAGIC select * from books_db.books where book_pub_year>=1900;
+# MAGIC select * from ${nbvars.books_tbl} where book_pub_year>=1900;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC --4) Lets validate further
-# MAGIC select * from books_db.books;
+# MAGIC select * from ${nbvars.books_tbl};
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC --4) Lets validate further
-# MAGIC select * from books_db.books;
+# MAGIC select * from ${nbvars.books_tbl};
 
 # COMMAND ----------
 
@@ -353,14 +321,14 @@ display(booksOverwriteDF)
 # COMMAND ----------
 
 # 2) Overwrite the table
-booksOverwriteDF.write.format("delta").mode("overwrite").save(delta_table_directory)
+booksOverwriteDF.write.mode("overwrite").format("delta").saveAsTable(books_tbl)
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC -- 3) Query
 # MAGIC -- Notice the "- the great" in the name in the couple records?
-# MAGIC select * from books_db.books;
+# MAGIC select * from ${nbvars.books_tbl};
 
 # COMMAND ----------
 
@@ -385,100 +353,30 @@ display(booksNewColDF)
 
 # COMMAND ----------
 
-booksNewColDF.write.format("delta").option("mergeSchema", "true").mode("overwrite").save(delta_table_directory)
+booksNewColDF.write.mode("overwrite").format("delta").option("mergeSchema", "true").saveAsTable(books_tbl)
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC -- 3) Query
-# MAGIC select * from books_db.books;
+# MAGIC select * from ${nbvars.books_tbl};
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC USE books_db;
+# MAGIC USE ${nbvars.books_db};
 # MAGIC
 # MAGIC DELETE FROM books where book_price is null;
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 7.0. Partitioning
-# MAGIC Works just the same as usual
-
-# COMMAND ----------
-
-columns = ["book_id", "book_author", "book_name", "book_pub_year", "book_price"]
-vals = [
-       ("b00001", "Sir Arthur Conan Doyle", "A study in scarlet", 1887, 5.33),
-       ("b00023", "Sir Arthur Conan Doyle", "A sign of four", 1890, 6.00),
-       ("b01001", "Sir Arthur Conan Doyle", "The adventures of Sherlock Holmes", 1892, 2.99),
-       ("b00501", "Sir Arthur Conan Doyle", "The memoirs of Sherlock Holmes", 1893, 8.00),
-       ("b00300", "Sir Arthur Conan Doyle", "The hounds of Baskerville", 1901, 4.00),
-       ("b09999", "Sir Arthur Conan Doyle", "The return of Sherlock Holmes", 1905, 2.22),
-       ("c09999", "Jules Verne", "Journey to the Center of the Earth ", 1864, 2.22),
-        ("d09933", "Jules Verne", "The return of Sherlock Holmes", 1870, 3.33),
-        ("f09945", "Jules Verne", "Around the World in Eighty Days", 1873, 4.44)
-]
-books_partitioned_df = spark.createDataFrame(vals, columns)
-books_partitioned_df.printSchema
-display(books_partitioned_df)
-
-# COMMAND ----------
-
-# 2) Persist
-books_part_path = f"/mnt/workshop/users/{uname}/curated/delta/books-part"
-
-dbutils.fs.rm(books_part_path, recurse=True)
-books_partitioned_df.write.format("delta").partitionBy("book_author").save(books_part_path)
-
-books_tbl_part = tblname(db="books", tbl="books_part")
-print("books_tbl_part:" + repr(books_tbl_part))
-spark.conf.set("nbvars.books_tbl_part", books_tbl_part)
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC -- 3) Create table
-# MAGIC USE ${nbvars.books_db};
-# MAGIC DROP TABLE IF EXISTS ${nbvars.books_tbl_part};
-# MAGIC CREATE TABLE ${nbvars.books_tbl_part}
-# MAGIC USING DELTA
-# MAGIC LOCATION "${nbvars.books_part_path}";
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC -- 4) Seamless
-# MAGIC select * from ${nbvars.books_tbl_part};
-
-# COMMAND ----------
-
-# 5) Is it really partitioned?
-display(dbutils.fs.ls(books_part_path))
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC Visit the portal and take a look at the storage account to see how its organized.
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 8.0. History
+# MAGIC ## 7.0. History
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC DESCRIBE HISTORY ${nbvars.books_tbl};
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
 
 # COMMAND ----------
 

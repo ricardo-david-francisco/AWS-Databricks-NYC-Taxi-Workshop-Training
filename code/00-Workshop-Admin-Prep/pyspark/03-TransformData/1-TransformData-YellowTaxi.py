@@ -1,7 +1,7 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # What's in this exercise?
-# MAGIC 
+# MAGIC
 # MAGIC 1) Read raw data, augment with derived attributes, augment with reference data & persist<BR> 
 # MAGIC 2) Create external unmanaged Hive tables<BR>
 # MAGIC 3) Create statistics for tables                          
@@ -24,6 +24,11 @@ from pyspark.sql.types import StructType, StructField, StringType, IntegerType,L
 
 # MAGIC %md
 # MAGIC ### 2.  Read raw, augment, persist as parquet 
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC DROP TABLE IF EXISTS training.taxinyc_trips.yellow_taxi_trips_curated;
 
 # COMMAND ----------
 
@@ -52,12 +57,6 @@ curatedDF = sql("""
       t.payment_type,
       t.trip_year,
       t.trip_month,
-      v.abbreviation as vendor_abbreviation,
-      v.description as vendor_description,
-      tm.month_name_short,
-      tm.month_name_full,
-      pt.description as payment_type_description,
-      rc.description as rate_code_description,
       tzpu.borough as pickup_borough,
       tzpu.zone as pickup_zone,
       tzpu.service_zone as pickup_service_zone,
@@ -79,64 +78,45 @@ curatedDF = sql("""
       second(t.dropoff_datetime) as dropoff_second,
       date(t.dropoff_datetime) as dropoff_date
   from 
-    taxi_db.yellow_taxi_trips_raw t
-    left outer join nyctaxi_reference_data.vendor_lookup v 
-      on (t.vendor_id = case when t.trip_year < "2015" then v.abbreviation else v.vendor_id end)
-    left outer join nyctaxi_reference_data.trip_month_lookup tm 
-      on (t.trip_month = tm.trip_month)
-    left outer join nyctaxi_reference_data.payment_type_lookup pt 
-      on (t.payment_type = case when t.trip_year < "2015" then pt.abbreviation else pt.payment_type end)
-    left outer join nyctaxi_reference_data.rate_code_lookup rc 
-      on (t.rate_code_id = rc.rate_code_id)
-    left outer join nyctaxi_reference_data.taxi_zone_lookup tzpu 
+    training.taxinyc_trips.yellow_taxi_trips_raw t
+    left outer join training.nyctaxi_reference_data.taxi_zone_lookup tzpu 
       on (t.pickup_location_id = tzpu.location_id)
-    left outer join nyctaxi_reference_data.taxi_zone_lookup tzdo 
+    left outer join training.nyctaxi_reference_data.taxi_zone_lookup tzdo 
       on (t.dropoff_location_id = tzdo.location_id)
   """)
 
-curatedDFConformed = (curatedDF.withColumn("temp_vendor_id", col("vendor_id").cast("integer")).drop("vendor_id").withColumnRenamed("temp_vendor_id", "vendor_id").withColumn("temp_payment_type", col("payment_type").cast("integer")).drop("payment_type").withColumnRenamed("temp_payment_type", "payment_type"))
-
-#Save as parquet, partition by year and month
-#curatedDFConformed.coalesce(15).write.partitionBy("trip_year", "trip_month").parquet(destDataDirRoot)
-
-# COMMAND ----------
-
-#Destination directory
-destDataDirRoot = "/mnt/workshop/curated/nyctaxi/transactions/yellow-taxi" 
-
-#Delete any residual data from prior executions for an idempotent run
-dbutils.fs.rm(destDataDirRoot,recurse=True)
+curatedDFConformed = (
+    curatedDF.withColumn("temp_vendor_id", col("vendor_id").cast("integer")).drop("vendor_id")
+    .withColumnRenamed("temp_vendor_id", "vendor_id")
+    .withColumn("temp_payment_type", col("payment_type").cast("integer")).drop("payment_type").withColumnRenamed("temp_payment_type", "payment_type")
+)
 
 # COMMAND ----------
 
-#Save as Delta, partition by year and month
-curatedDFConformed.coalesce(10).write.format("delta").mode("append").partitionBy("trip_year","trip_month").save(destDataDirRoot)   
+(curatedDFConformed
+.coalesce(15).write
+.partitionBy("trip_year", "trip_month")  # partition makes consumption more efficient
+.mode("overwrite").format("delta")
+.saveAsTable("training.taxinyc_trips.yellow_taxi_trips_curated")
+)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 3.  Define external table
+# MAGIC ### 3.  Explore
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC USE taxi_db;
-# MAGIC DROP TABLE IF EXISTS yellow_taxi_trips_curated;
-# MAGIC CREATE TABLE yellow_taxi_trips_curated
-# MAGIC USING DELTA
-# MAGIC LOCATION '/mnt/workshop/curated/nyctaxi/transactions/yellow-taxi';
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### 4.  Explore
+# MAGIC select count(*) as trip_count from training.taxinyc_trips.yellow_taxi_trips_curated
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC select count(*) as trip_count from taxi_db.yellow_taxi_trips_curated 
+# MAGIC select trip_year,trip_month, count(*) as trip_count
+# MAGIC from training.taxinyc_trips.yellow_taxi_trips_curated
+# MAGIC group by trip_year,trip_month
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC select trip_year,trip_month, count(*) as trip_count from taxi_db.yellow_taxi_trips_curated group by trip_year,trip_month
+
