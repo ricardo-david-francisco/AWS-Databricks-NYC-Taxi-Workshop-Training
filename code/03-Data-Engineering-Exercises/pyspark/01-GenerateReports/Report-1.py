@@ -25,11 +25,13 @@ spark.conf.set("nbvars.books_tbl", books_tbl)
 # COMMAND ----------
 
 # MAGIC %sql
+# MAGIC -- use training;
 # MAGIC select
 # MAGIC   taxi_type,
 # MAGIC   count(*) as trip_count
 # MAGIC from
-# MAGIC   taxi_db.taxi_trips_mat_view
+# MAGIC   training.taxinyc_trips.yellow_taxi_trips_raw
+# MAGIC   -- taxinyc_trips.taxi_trips_mat_view
 # MAGIC group by taxi_type
 
 # COMMAND ----------
@@ -93,13 +95,13 @@ spark.conf.set("nbvars.books_tbl", books_tbl)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC 
+# MAGIC
 # MAGIC select
 # MAGIC   taxi_type,
 # MAGIC   trip_month as month,
 # MAGIC   count(*) as trip_count
 # MAGIC from
-# MAGIC   taxi_db.taxi_trips_mat_view
+# MAGIC   training.taxinyc_trips.yellow_taxi_trips_curated
 # MAGIC where 
 # MAGIC   trip_year=2016
 # MAGIC group by taxi_type,trip_month
@@ -113,11 +115,11 @@ spark.conf.set("nbvars.books_tbl", books_tbl)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC 
+# MAGIC
 # MAGIC select
 # MAGIC   taxi_type, round(avg(trip_distance),2) as trip_distance_miles
 # MAGIC from
-# MAGIC   taxi_db.taxi_trips_mat_view
+# MAGIC   training.taxinyc_trips.yellow_taxi_trips_curated
 # MAGIC group by taxi_type
 
 # COMMAND ----------
@@ -128,11 +130,11 @@ spark.conf.set("nbvars.books_tbl", books_tbl)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC 
+# MAGIC
 # MAGIC select
 # MAGIC   taxi_type, round(avg(total_amount),2) as avg_total_amount
 # MAGIC from
-# MAGIC   taxi_db.taxi_trips_mat_view
+# MAGIC   training.taxinyc_trips.yellow_taxi_trips_curated
 # MAGIC group by taxi_type
 
 # COMMAND ----------
@@ -143,11 +145,11 @@ spark.conf.set("nbvars.books_tbl", books_tbl)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC 
+# MAGIC
 # MAGIC select
 # MAGIC   taxi_type, count(*) tipless_count
 # MAGIC from
-# MAGIC   taxi_db.taxi_trips_mat_view
+# MAGIC   training.taxinyc_trips.yellow_taxi_trips_curated
 # MAGIC where tip_amount=0
 # MAGIC group by taxi_type
 
@@ -159,11 +161,11 @@ spark.conf.set("nbvars.books_tbl", books_tbl)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC 
+# MAGIC
 # MAGIC select
 # MAGIC   taxi_type, count(*) as transactions
 # MAGIC from
-# MAGIC   taxi_db.taxi_trips_mat_view
+# MAGIC   training.taxinyc_trips.yellow_taxi_trips_curated
 # MAGIC where
 # MAGIC   payment_type_description='No charge'
 # MAGIC   and total_amount=0.0
@@ -177,11 +179,11 @@ spark.conf.set("nbvars.books_tbl", books_tbl)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC 
+# MAGIC
 # MAGIC select
 # MAGIC   payment_type_description as Payment_type, count(*) as transactions
 # MAGIC from
-# MAGIC   taxi_db.taxi_trips_mat_view
+# MAGIC   training.taxinyc_trips.yellow_taxi_trips_curated
 # MAGIC group by payment_type_description
 
 # COMMAND ----------
@@ -193,7 +195,7 @@ spark.conf.set("nbvars.books_tbl", books_tbl)
 
 # MAGIC %sql
 # MAGIC select pickup_hour,count(*) as trip_count
-# MAGIC from taxi_db.yellow_taxi_trips_curated
+# MAGIC from training.taxinyc_trips.yellow_taxi_trips_curated
 # MAGIC where trip_year=2016
 # MAGIC group by pickup_hour
 # MAGIC order by pickup_hour
@@ -211,7 +213,7 @@ spark.conf.set("nbvars.books_tbl", books_tbl)
 # MAGIC   select
 # MAGIC     pickup_zone,dropoff_zone,count(*) as trip_count
 # MAGIC   from
-# MAGIC     taxi_db.yellow_taxi_trips_curated
+# MAGIC     training.taxinyc_trips.yellow_taxi_trips_curated
 # MAGIC   where
 # MAGIC     trip_year=2016
 # MAGIC   and
