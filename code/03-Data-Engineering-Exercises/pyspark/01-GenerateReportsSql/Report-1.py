@@ -6,7 +6,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC # Exercises
+# MAGIC # Examples
 
 # COMMAND ----------
 
@@ -22,7 +22,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 1.  Trip count by taxi type
+# MAGIC ### 1.  Trip count by pickup_borough
 
 # COMMAND ----------
 
@@ -39,7 +39,30 @@
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC
+# MAGIC # Excercises
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### 1. Trip count passenger_count
+# MAGIC Order ascending by passenger_count
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC select
+# MAGIC   passenger_count, sum(total_amount) revenue
+# MAGIC from
+# MAGIC   training.taxinyc_trips.yellow_taxi_trips_curated
+# MAGIC group by passenger_count
+# MAGIC order by passenger_count asc
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## 2.  Revenue including tips by taxi type
+# MAGIC use `total_amount` to get revenue incl tips
 
 # COMMAND ----------
 
@@ -53,7 +76,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 3.  Revenue share by taxi type
+# MAGIC ### 3.  Revenue share by pickup_borough
 
 # COMMAND ----------
 
@@ -67,7 +90,9 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 4.  Trip count trend between 2013 and 2016
+# MAGIC ### 3.  Revenue share by pickup_borough
+# MAGIC
+# MAGIC But count pickup_borough, discard trips which pick_borough is null
 
 # COMMAND ----------
 
@@ -76,12 +101,13 @@
 # MAGIC   pickup_borough, sum(total_amount) revenue
 # MAGIC from
 # MAGIC   training.taxinyc_trips.yellow_taxi_trips_curated
+# MAGIC where pickup_borough is not null
 # MAGIC group by pickup_borough
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 5.  Trip count trend by month, by taxi type, for 2016
+# MAGIC ### 5.  Trip count trend by month, by pickup_borough, for 2016
 
 # COMMAND ----------
 
@@ -101,7 +127,9 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 6.  Average trip distance by taxi type
+# MAGIC ### 6.  Average trip distance by pickup_borough
+# MAGIC
+# MAGIC Use functions `avg()` for average, and `round()` to round off value.
 
 # COMMAND ----------
 
@@ -116,7 +144,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 7.  Average trip amount by taxi type
+# MAGIC ### 7.  Average trip amount by pickup_borough
 
 # COMMAND ----------
 
@@ -132,6 +160,7 @@
 
 # MAGIC %md
 # MAGIC ### 8.  Trips with no tip, by taxi type
+# MAGIC `tip_amount` is the tip column
 
 # COMMAND ----------
 
@@ -147,7 +176,18 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 9.  Trips with no charge, by taxi type
+# MAGIC ### 9. Trips with no charge, by pickup_borough
+# MAGIC
+# MAGIC `Payment_type`
+# MAGIC
+# MAGIC A numeric code signifying how the passenger paid for the trip. Type values:
+# MAGIC
+# MAGIC 1. `Credit card`
+# MAGIC 2. `Cash`
+# MAGIC 3. `No charge`
+# MAGIC 4. `Dispute`
+# MAGIC 5. `Unknown`
+# MAGIC 6. `Voided trip`
 
 # COMMAND ----------
 
@@ -158,7 +198,7 @@
 # MAGIC from
 # MAGIC   training.taxinyc_trips.yellow_taxi_trips_curated
 # MAGIC where
-# MAGIC   payment_type_description='No charge'
+# MAGIC   payment_type=3
 # MAGIC   and total_amount=0.0
 # MAGIC group by pickup_borough
 
@@ -180,7 +220,9 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 11.  Trip trend by pickup hour for yellow taxi in 2016
+# MAGIC ### 11. Trip trend by pickup hour for yellow taxi in 2016
+# MAGIC
+# MAGIC Count by pickup_hour for year 2016
 
 # COMMAND ----------
 
