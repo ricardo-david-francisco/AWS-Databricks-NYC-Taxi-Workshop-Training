@@ -97,6 +97,8 @@
 # MAGIC ### 6.  Average trip distance by pickup_borough
 # MAGIC
 # MAGIC Use functions `avg()` for average, and `round()` to round off value.
+# MAGIC
+# MAGIC Use `trip_distance`.
 
 # COMMAND ----------
 
@@ -106,6 +108,8 @@
 
 # MAGIC %md
 # MAGIC ### 7.  Average trip amount by pickup_borough
+# MAGIC
+# MAGIC Use `total_amount`.
 
 # COMMAND ----------
 
@@ -114,7 +118,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 8.  Trips with no tip, by taxi type
+# MAGIC ### 8. Count trips with no tip, by by pickup_borough
 # MAGIC `tip_amount` is the tip column
 
 # COMMAND ----------
@@ -124,7 +128,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 9. Trips with no charge, by pickup_borough
+# MAGIC ### 9. Count trips with no charge, by pickup_borough
 # MAGIC
 # MAGIC `Payment_type`
 # MAGIC
@@ -144,7 +148,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 10.  Trips by payment type
+# MAGIC ### 10. Count trips by payment type
 
 # COMMAND ----------
 
@@ -153,7 +157,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 11. Trip trend by pickup hour for yellow taxi in 2016
+# MAGIC ### 11. Count trips by pickup hour in 2016
 # MAGIC
 # MAGIC Count by pickup_hour for year 2016
 
@@ -164,7 +168,12 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 12.  Top 3 yellow taxi pickup-dropoff zones for 2016
+# MAGIC # Bonus exercises
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### 12. Top 3 pickup-dropoff zones for 2016
 
 # COMMAND ----------
 

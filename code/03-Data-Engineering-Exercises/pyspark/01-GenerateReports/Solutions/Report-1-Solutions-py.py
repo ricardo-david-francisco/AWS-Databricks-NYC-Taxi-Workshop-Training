@@ -63,7 +63,7 @@ trips_df.groupBy("payment_type").agg(
 
 # COMMAND ----------
 
-
+trips_df.groupBy("passenger_count").count().display()
 
 # COMMAND ----------
 
@@ -76,7 +76,7 @@ trips_df.groupBy("payment_type").agg(
 
 # COMMAND ----------
 
-
+trips_df.agg(F.round(F.sum("total_amount")).alias("revenue")).display()
 
 # COMMAND ----------
 
@@ -85,7 +85,10 @@ trips_df.groupBy("payment_type").agg(
 
 # COMMAND ----------
 
-
+(trips_df
+    .groupBy("pickup_borough")
+    .agg(F.round(F.sum("total_amount")).alias("revenue"))
+).display()
 
 # COMMAND ----------
 
@@ -98,7 +101,11 @@ trips_df.groupBy("payment_type").agg(
 
 # COMMAND ----------
 
-
+(trips_df
+    .where(F.col("pickup_borough").isNotNull())
+    .groupBy("pickup_borough")
+    .agg(F.round(F.sum("total_amount")).alias("revenue"))
+).display()
 
 # COMMAND ----------
 
@@ -109,7 +116,11 @@ trips_df.groupBy("payment_type").agg(
 
 # COMMAND ----------
 
-
+(trips_df
+    .where(F.col("trip_year") == 2016)
+    .groupBy("pickup_borough", "trip_month")
+    .count()
+).display()
 
 # COMMAND ----------
 
@@ -122,7 +133,10 @@ trips_df.groupBy("payment_type").agg(
 
 # COMMAND ----------
 
-
+(trips_df
+    .groupBy("pickup_borough")
+    .agg(F.avg("trip_distance").alias("avg_trip_distance"))
+).display()
 
 # COMMAND ----------
 
@@ -133,7 +147,10 @@ trips_df.groupBy("payment_type").agg(
 
 # COMMAND ----------
 
-
+(trips_df
+    .groupBy("pickup_borough")
+    .agg(F.avg("total_amount").alias("avg_amount"))
+).display()
 
 # COMMAND ----------
 
@@ -143,7 +160,11 @@ trips_df.groupBy("payment_type").agg(
 
 # COMMAND ----------
 
-
+(trips_df
+    .where(F.col("tip_amount") == 0)
+    .groupBy("pickup_borough")
+    .count()
+).display()
 
 # COMMAND ----------
 
@@ -163,7 +184,11 @@ trips_df.groupBy("payment_type").agg(
 
 # COMMAND ----------
 
-
+(trips_df
+    .where(F.col("payment_type") == 3)
+    .groupBy("pickup_borough")
+    .count()
+).display()
 
 # COMMAND ----------
 
@@ -172,7 +197,10 @@ trips_df.groupBy("payment_type").agg(
 
 # COMMAND ----------
 
-
+(trips_df
+    .groupBy("payment_type")
+    .count()
+).display()
 
 # COMMAND ----------
 
@@ -183,7 +211,11 @@ trips_df.groupBy("payment_type").agg(
 
 # COMMAND ----------
 
-
+(trips_df
+    .where(F.col("trip_year") == 2016)
+    .groupBy("pickup_hour")
+    .count()
+).display()
 
 # COMMAND ----------
 
@@ -212,6 +244,18 @@ trips_df.groupBy("payment_type").agg(
 
 # COMMAND ----------
 
+(trips_df.where(
+        (F.col("trip_year") == 2016) &
+        F.col("pickup_zone").isNotNull() &
+        (F.col("pickup_zone") != "NV") &
+        F.col("dropoff_zone").isNotNull() &
+        (F.col("dropoff_zone") != "NV")
+    )
+    .groupBy("pickup_zone", "dropoff_zone")
+    .count()
+    .sort(F.col("count").desc())
+    .limit(3)
+).display()
 
 
 # COMMAND ----------
