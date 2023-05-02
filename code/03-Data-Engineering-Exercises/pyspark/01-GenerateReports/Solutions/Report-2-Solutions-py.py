@@ -35,19 +35,19 @@ trips_df.groupBy("pickup_borough").count().display()
 
 # MAGIC %md
 # MAGIC
-# MAGIC ### 2. Revenue sum by payment_type
+# MAGIC ### 2. Revenue sum by pickup_borough
 # MAGIC
 # MAGIC `total_amount` is the revenue for a trip.
 # MAGIC
-# MAGIC Sort by payment_type ascending.
+# MAGIC Sort by pickup_borough ascending.
 # MAGIC
 # MAGIC To sort / order by, use `.sort(F.col("col_name").asc())`.
 
 # COMMAND ----------
 
-trips_df.groupBy("payment_type").agg(
+trips_df.groupBy("pickup_borough").agg(
     F.sum("total_amount")
-).sort(F.col("payment_type").asc()).display()
+).sort(F.col("pickup_borough").asc()).display()
 
 # COMMAND ----------
 
