@@ -6,7 +6,7 @@ def username(dbutils):
     # dbutils must be passed in as param as databricks lib not available in UC cluster
     """Return username, stripped for dots, part of users's email to use as dev db prefix"""
     email = dbutils.notebook.entry_point.getDbutils().notebook().getContext().userName().get()
-    name = email.split("@")[0].replace(".", "")
+    name = email.split("@")[0].replace(".", "").replace("-", "")
     return name
 
 
