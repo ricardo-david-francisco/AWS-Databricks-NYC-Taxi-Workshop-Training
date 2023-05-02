@@ -81,12 +81,14 @@ trips_df.agg(F.round(F.sum("total_amount")).alias("revenue")).display()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 3.  Revenue share by pickup_borough
+# MAGIC ### 3. Total revenue by pickup_borough, payment_type
+# MAGIC
+# MAGIC `pickup_borough`, `payment_type`
 
 # COMMAND ----------
 
 (trips_df
-    .groupBy("pickup_borough")
+    .groupBy("pickup_borough", "payment_type")
     .agg(F.round(F.sum("total_amount")).alias("revenue"))
 ).display()
 

@@ -81,7 +81,9 @@ trips_df.groupBy("pickup_borough").agg(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 3.  Revenue share by pickup_borough
+# MAGIC ### 3. Total revenue by pickup_borough, payment_type
+# MAGIC
+# MAGIC `pickup_borough`, `payment_type`
 
 # COMMAND ----------
 
