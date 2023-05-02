@@ -42,6 +42,18 @@ spark.conf.set("nbvars.crime_db", crime_db)
 
 # COMMAND ----------
 
+from libs.dbname import dbname
+books_db = dbname(db="books")
+print("New db name: " + books_db)
+spark.conf.set("nbvars.books_db", books_db)
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC CREATE DATABASE IF NOT EXISTS ${nbvars.books_db};
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ##### 1.2. Validate
 
