@@ -14,10 +14,45 @@ from pyspark.sql.types import StructType, StructField, StringType, IntegerType,L
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC
+# MAGIC ## Setup data volume
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC
+# MAGIC USE CATALOG training;
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC
+# MAGIC CREATE SCHEMA IF NOT EXISTS data;
+# MAGIC use schema data;
+# MAGIC CREATE VOLUME IF NOT EXISTS nyctaxi
+# MAGIC     COMMENT 'Volume for nyctaxi example data';
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC
+# MAGIC ## Define paths
+
+# COMMAND ----------
+
+import os
+
 # Define source and destination directories
-srcDataDirRoot = "/mnt/workshop/staging/reference-data/" #Root dir for source data
+srcDataDirRoot = "/Volumes/training/data/nyctaxi/staging/reference-data/" #Root dir for source data
+os.environ['srcDataDirRoot'] = srcDataDirRoot
 # srcDataDirRoot = "dbfs:/databricks-datasets/nyctaxi/reference/" #Root dir for source data
-destDataDirRoot = "/mnt/workshop/curated/nyctaxi/reference/" #Root dir for consumable data
+destDataDirRoot = "/Volumes/training/data/nyctaxi/consumable/reference/" #Root dir for consumable data
+os.environ['destDataDirRoot'] = destDataDirRoot
 
 # COMMAND ----------
 
@@ -26,8 +61,13 @@ destDataDirRoot = "/mnt/workshop/curated/nyctaxi/reference/" #Root dir for consu
 
 # COMMAND ----------
 
+# MAGIC %ls /Volumes/training/data/
+
+# COMMAND ----------
+
 # MAGIC %sh
-# MAGIC mkdir -p /mnt/workshop/staging/reference-data/
+# MAGIC mkdir -p $destDataDirRoot
+# MAGIC mkdir -p $srcDataDirRoot
 
 # COMMAND ----------
 
@@ -49,6 +89,10 @@ destDataDirRoot = "/mnt/workshop/curated/nyctaxi/reference/" #Root dir for consu
 
 # MAGIC %sh
 # MAGIC head -n 2 /tmp/reference/taxi_zone_lookup.csv
+
+# COMMAND ----------
+
+# MAGIC %ls $srcDataDirRoot
 
 # COMMAND ----------
 
