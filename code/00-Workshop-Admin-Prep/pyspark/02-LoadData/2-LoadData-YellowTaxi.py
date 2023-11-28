@@ -8,6 +8,7 @@
 
 # COMMAND ----------
 
+import os
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType,LongType,FloatType,DoubleType, TimestampType
 
 # COMMAND ----------
@@ -24,7 +25,12 @@ display(dbutils.fs.ls("dbfs:/databricks-datasets/nyctaxi/"))
 #Source, destination directories
 # srcDataDirRoot = "/mnt/workshop/staging/transactional-data/" 
 srcDataDirRoot = "/databricks-datasets/nyctaxi/tripdata/yellow/" 
-destDataDirRoot = "/mnt/workshop/raw/nyctaxi/transactions/yellow-taxi/" 
+# srcDataDirRoot = "dbfs:/databricks-datasets/nyctaxi/reference/" #Root dir for source data
+os.environ['srcDataDirRoot'] = srcDataDirRoot
+
+# destDataDirRoot = "/mnt/workshop/raw/nyctaxi/transactions/yellow-taxi/" 
+destDataDirRoot = "/Volumes/training/data/nyctaxi/transactions/yellow-taxi/" #Root dir for consumable data
+os.environ['destDataDirRoot'] = destDataDirRoot
 
 #Canonical ordered column list for yellow taxi across years to homogenize schema
 canonicalTripSchemaColList = ["taxi_type","vendor_id","pickup_datetime","dropoff_datetime","store_and_fwd_flag","rate_code_id","pickup_location_id","dropoff_location_id","pickup_longitude","pickup_latitude","dropoff_longitude","dropoff_latitude","passenger_count","trip_distance","fare_amount","extra","mta_tax","tip_amount","tolls_amount","improvement_surcharge","total_amount","payment_type","trip_year","trip_month"]
@@ -241,13 +247,23 @@ def getSchemaHomogenizedDataframe(sourceDF,tripYear, tripMonth):
 # COMMAND ----------
 
 #Delete any residual data from prior executions for an idempotent run
-dbutils.fs.rm(destDataDirRoot,recurse=True)
+dbutils.fs.rm(destDataDirRoot, recurse=True)
 
 # COMMAND ----------
 
 # MAGIC %sql
+# MAGIC use catalog training;
 # MAGIC use nyctaxi_reference_data;
 # MAGIC DROP TABLE IF EXISTS yellow_taxi_trips_raw;
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC use catalog training;
+# MAGIC create schema IF NOT EXISTS taxinyc_trips;
+# MAGIC use taxinyc_trips;
+# MAGIC DROP TABLE IF EXISTS yellow_taxi_trips_raw;
+# MAGIC CREATE TABLE IF NOT EXISTS yellow_taxi_trips_raw;
 
 # COMMAND ----------
 
@@ -284,7 +300,31 @@ for j in range(2016,2018):
     #To make Hive Parquet format compatible with Spark Parquet format
     sqlContext.setConf("spark.sql.parquet.writeLegacyFormat", "true")
 
-    taxiCanonicalDF.coalesce(6).write.format("delta").mode("append").partitionBy("trip_year","trip_month").save(destDataDirRoot)  
+    # taxiCanonicalDF.coalesce(6).write.format("delta").mode("append").partitionBy("trip_year","trip_month").save(destDataDirRoot)
+    taxiCanonicalDF.coalesce(6).write.format("delta").mode("append").option("mergeSchema", "true").saveAsTable('training.taxinyc_trips.yellow_taxi_trips_raw')
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC use catalog training;
+# MAGIC select * from taxinyc_trips.yellow_taxi_trips_raw;
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC select count(*) from training.taxinyc_trips.yellow_taxi_trips_raw;
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
 
 # COMMAND ----------
 
@@ -298,13 +338,18 @@ for j in range(2016,2018):
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC create schema taxinyc_trips;
-# MAGIC use taxinyc_trips;
-# MAGIC DROP TABLE IF EXISTS yellow_taxi_trips_raw;
-# MAGIC CREATE TABLE IF NOT EXISTS yellow_taxi_trips_raw
-# MAGIC USING DELTA
-# MAGIC LOCATION '/mnt/workshop/raw/nyctaxi/transactions/yellow-taxi/';
+# %sql
+# use catalog training;
+# create schema taxinyc_trips;
+# use taxinyc_trips;
+# DROP TABLE IF EXISTS yellow_taxi_trips_raw;
+# CREATE TABLE IF NOT EXISTS yellow_taxi_trips_raw;
+# -- USING DELTA
+# -- LOCATION '/mnt/workshop/raw/nyctaxi/transactions/yellow-taxi/';
+
+# COMMAND ----------
+
+
 
 # COMMAND ----------
 
@@ -318,9 +363,13 @@ for j in range(2016,2018):
 
 # COMMAND ----------
 
+
+
+# COMMAND ----------
+
 # MAGIC %sql
-# MAGIC CREATE OR REPLACE TABLE training.taxinyc_trips.yellow_taxi_trips_raw 
-# MAGIC CLONE hive_metastore.taxinyc_trips.yellow_taxi_trips_raw;
+# MAGIC -- CREATE OR REPLACE TABLE training.taxinyc_trips.yellow_taxi_trips_raw 
+# MAGIC -- CLONE hive_metastore.taxinyc_trips.yellow_taxi_trips_raw;
 
 # COMMAND ----------
 

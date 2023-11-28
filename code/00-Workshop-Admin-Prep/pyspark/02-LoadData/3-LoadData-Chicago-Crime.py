@@ -42,9 +42,9 @@ display(dbutils.fs.ls("file:/tmp/chicago-crimes.csv"))
 
 # Only do this once!!!
 
-# dbfs_dir_path = f"/mnt/workshop/staging/crimes/chicago-crimes"
-# dbutils.fs.rm(dbfs_dir_path, recurse=True)
-# dbutils.fs.mkdirs(dbfs_dir_path)
+dbfs_dir_path = f"/Volumes/training/data/crimes/staging/chicago-crimes"
+dbutils.fs.rm(dbfs_dir_path, recurse=True)
+dbutils.fs.mkdirs(dbfs_dir_path)
 
 # COMMAND ----------
 

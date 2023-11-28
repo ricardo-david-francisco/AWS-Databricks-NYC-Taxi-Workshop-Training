@@ -96,7 +96,12 @@ os.environ['destDataDirRoot'] = destDataDirRoot
 
 # COMMAND ----------
 
-dbutils.fs.cp("file:///tmp/reference/taxi_zone_lookup.csv", f"{srcDataDirRoot}/taxi_zone_lookup.csv")
+# MAGIC %sh
+# MAGIC cp /tmp/reference/taxi_zone_lookup.csv $srcDataDirRoot/taxi_zone_lookup.csv
+
+# COMMAND ----------
+
+# dbutils.fs.cp("file:///tmp/reference/taxi_zone_lookup.csv", f"{srcDataDirRoot}/taxi_zone_lookup.csv")
 display(dbutils.fs.ls(f"{srcDataDirRoot}/taxi_zone_lookup.csv"))
 
 # COMMAND ----------
@@ -173,7 +178,7 @@ vendorSchema = StructType([
 
 # COMMAND ----------
 
-def loadReferenceData(srcDatasetName, srcDataFile, destDataDir, srcSchema, delimiter ):
+def loadReferenceData(srcDatasetName, srcDataFile, destDataDir, srcSchema, delimiter):
   print("Dataset:  " + srcDatasetName)
   print(".......................................................")
   
@@ -195,6 +200,7 @@ def loadReferenceData(srcDatasetName, srcDataFile, destDataDir, srcSchema, delim
   #dbutils.fs.ls(destDataDir + "/").foreach(lambda i: if (!(i.path contains "parquet")) dbutils.fs.rm(i.path))
   
   print("....done")
+  return refDF
 
 
 # COMMAND ----------
@@ -204,7 +210,7 @@ def loadReferenceData(srcDatasetName, srcDataFile, destDataDir, srcSchema, delim
 
 # COMMAND ----------
 
-loadReferenceData("taxi zone",srcDataDirRoot + "taxi_zone_lookup.csv",destDataDirRoot + "taxi-zone",taxiZoneSchema,",")
+taxi_zone_lookup_df = loadReferenceData("taxi zone", srcDataDirRoot + "taxi_zone_lookup.csv", destDataDirRoot + "taxi-zone", taxiZoneSchema, ",")
 # loadReferenceData("trip month",srcDataDirRoot + "trip_month_lookup.csv",destDataDirRoot + "trip-month",tripMonthNameSchema,",")
 # loadReferenceData("rate code",srcDataDirRoot + "rate_code_lookup.csv",destDataDirRoot + "rate-code",rateCodeSchema,"|")
 # loadReferenceData("payment type",srcDataDirRoot + "payment_type_lookup.csv",destDataDirRoot + "payment-type",paymentTypeSchema,"|")
@@ -213,12 +219,16 @@ loadReferenceData("taxi zone",srcDataDirRoot + "taxi_zone_lookup.csv",destDataDi
 
 # COMMAND ----------
 
+# MAGIC %ls -l /Volumes/training/data/nyctaxi/consumable/reference/taxi-zone/
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ##### 4.3. Validate load
 
 # COMMAND ----------
 
-display(dbutils.fs.ls("/mnt/workshop/curated/nyctaxi/reference"))
+display(dbutils.fs.ls(destDataDirRoot))
 
 # COMMAND ----------
 
@@ -256,8 +266,25 @@ display(dbutils.fs.ls("/mnt/workshop/curated/nyctaxi/reference"))
 
 # COMMAND ----------
 
+taxi_zone_lookup_df.write.format('delta').mode('append').saveAsTable('training.nyctaxi_reference_data.taxi_zone_lookup')
+
+# COMMAND ----------
+
 # MAGIC %sql
-# MAGIC insert into training.nyctaxi_reference_data.taxi_zone_lookup (select * from hive_metastore.nyctaxi_reference_data.taxi_zone_lookup);
+# MAGIC select * from training.nyctaxi_reference_data.taxi_zone_lookup;
+
+# COMMAND ----------
+
+# %sql
+# insert into training.nyctaxi_reference_data.taxi_zone_lookup (select * from hive_metastore.nyctaxi_reference_data.taxi_zone_lookup);
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
 
 # COMMAND ----------
 
