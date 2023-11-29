@@ -45,7 +45,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 1. Trip count passenger_count
+# MAGIC ### 1. Count trips by passenger_count
 # MAGIC Order ascending by passenger_count
 
 # COMMAND ----------
