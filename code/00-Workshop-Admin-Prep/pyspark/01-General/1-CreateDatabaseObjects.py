@@ -11,8 +11,7 @@
 
 # COMMAND ----------
 
-display(spark.catalog.listDatabases())
-
+# display(spark.catalog.listDatabases())
 
 # COMMAND ----------
 

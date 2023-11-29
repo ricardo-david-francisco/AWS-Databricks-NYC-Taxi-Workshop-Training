@@ -28,8 +28,7 @@
 
 # COMMAND ----------
 
-# 3) List to validate if file exists
-display(dbutils.fs.ls("file:/tmp/chicago-crimes.csv"))
+# MAGIC %ls -l /tmp/chicago-crimes.csv
 
 # COMMAND ----------
 
@@ -38,24 +37,38 @@ display(dbutils.fs.ls("file:/tmp/chicago-crimes.csv"))
 
 # COMMAND ----------
 
+# MAGIC %sh
+# MAGIC mkdir -p /Volumes/training/data/crimes/staging/chicago-crimes
+
+# COMMAND ----------
+
 # 1) Create destination directory
 
 # Only do this once!!!
 
-# dbfs_dir_path = f"/mnt/workshop/staging/crimes/chicago-crimes"
+# dbfs_dir_path = f"/Volumes/training/data/crimes/staging/chicago-crimes"
 # dbutils.fs.rm(dbfs_dir_path, recurse=True)
 # dbutils.fs.mkdirs(dbfs_dir_path)
 
 # COMMAND ----------
 
-# 2) Upload to from localDirPath to dbfs_dir_path
-dbutils.fs.cp("file:/tmp/chicago-crimes.csv", dbfs_dir_path, recurse=True)
+# MAGIC %sh
+# MAGIC cp -r /tmp/chicago-crimes.csv /Volumes/training/data/crimes/staging/chicago-crimes
 
-# 3) Clean up local directory
-# dbutils.fs.rm(localFile)
+# COMMAND ----------
 
-# 4) List dbfs_dir_path
-display(dbutils.fs.ls(dbfs_dir_path))
+# MAGIC %ls -l /Volumes/training/data/crimes/staging/chicago-crimes
+
+# COMMAND ----------
+
+# # 2) Upload to from localDirPath to dbfs_dir_path
+# dbutils.fs.cp("file:/tmp/chicago-crimes.csv", dbfs_dir_path, recurse=True)
+
+# # 3) Clean up local directory
+# # dbutils.fs.rm(localFile)
+
+# # 4) List dbfs_dir_path
+# display(dbutils.fs.ls(dbfs_dir_path))
 
 # COMMAND ----------
 

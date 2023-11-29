@@ -28,7 +28,8 @@ from libs.tblname import tblname, username
 uname = username(dbutils)
 
 # 3) List to validate if file exists
-dbfs_src_dir_path = f"/mnt/workshop/staging/crimes/chicago-crimes"
+dbfs_src_dir_path = f"/Volumes/training/data/crimes/staging/chicago-crimes"
+# dbfs_src_dir_path = f"/mnt/workshop/staging/crimes/chicago-crimes"
 
 # COMMAND ----------
 
@@ -47,7 +48,7 @@ display(dbutils.fs.ls(dbfs_src_dir_path))
 # COMMAND ----------
 
 # 2) Destination directory
-dbfs_dest_dir_path_raw = f"/mnt/workshop/users/{uname}/raw/crimes/chicago-crimes"
+dbfs_dest_dir_path_raw = f"/Volumes/training/data/crimes/users/{uname}/raw/crimes/chicago-crimes"
 
 # COMMAND ----------
 
@@ -211,7 +212,7 @@ display(curated_df)
 # COMMAND ----------
 
 # 2) Persist as parquet to curated storage zone, 
-dbfs_dest_dir_path_curated = f"/mnt/workshop/users/{uname}/curated/crimes/chicago-crimes"
+dbfs_dest_dir_path_curated = f"/Volumes/training/data/crimes/users/{uname}/curated/crimes/chicago-crimes"
 dbutils.fs.rm(dbfs_dest_dir_path_curated, recurse=True)
 curated_df.write.partitionBy("case_year","case_month").parquet(dbfs_dest_dir_path_curated)
 
