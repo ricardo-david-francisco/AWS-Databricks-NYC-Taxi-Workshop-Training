@@ -1,8 +1,38 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # What's in this exercise?
+# MAGIC # Setup database objects for the workshop
 # MAGIC
-# MAGIC 1) Show existing databases<BR>
+# MAGIC 1) Run through the cells as workspace admin
+# MAGIC 2) Grant use on POLICY `dlt_custom_policy` to `banenor-workshop` or whatever group is doing the course, under Compute->Policies. I have not found a way of doing it with sql, API could probably be use.
+# MAGIC
+# MAGIC You will also need a policy like this to be created first:
+# MAGIC
+# MAGIC ```
+# MAGIC {
+# MAGIC   "cluster_type": {
+# MAGIC     "type": "fixed",
+# MAGIC     "value": "dlt"
+# MAGIC   },
+# MAGIC   "num_workers": {
+# MAGIC     "type": "unlimited",
+# MAGIC     "defaultValue": 3,
+# MAGIC     "isOptional": true
+# MAGIC   },
+# MAGIC   "node_type_id": {
+# MAGIC     "type": "unlimited",
+# MAGIC     "isOptional": true
+# MAGIC   },
+# MAGIC   "spark_version": {
+# MAGIC     "type": "unlimited",
+# MAGIC     "hidden": true
+# MAGIC   }
+# MAGIC }
+# MAGIC ```
+
+# COMMAND ----------
+
+TODO: set groupname as name of the group of users doing the workshop
+groupname = "training-workshop"
 
 # COMMAND ----------
 
@@ -24,6 +54,14 @@
 # COMMAND ----------
 
 spark.sql("CREATE CATALOG IF NOT EXISTS training")
+
+# COMMAND ----------
+
+spark.sql(f"GRANT CREATE SCHEMA ON CATALOG training TO `{groupname}`")
+
+# COMMAND ----------
+
+spark.sql(f"GRANT WRITE VOLUME ON VOLUME training.data.crimes TO `{groupname}`")
 
 # COMMAND ----------
 
