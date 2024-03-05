@@ -32,7 +32,7 @@
 # COMMAND ----------
 
 TODO: set groupname as name of the group of users doing the workshop
-groupname = "training-workshop"
+groupname = "workshop-groupname"
 
 # COMMAND ----------
 
@@ -58,6 +58,14 @@ spark.sql("CREATE CATALOG IF NOT EXISTS training")
 # COMMAND ----------
 
 spark.sql(f"GRANT CREATE SCHEMA ON CATALOG training TO `{groupname}`")
+
+# COMMAND ----------
+
+spark.sql(f"GRANT USE_SCHEMA ON SCHEMA training.data TO `{groupname}`")
+
+# COMMAND ----------
+
+spark.sql(f"GRANT READ VOLUME ON VOLUME training.data.crimes TO `{groupname}`")
 
 # COMMAND ----------
 

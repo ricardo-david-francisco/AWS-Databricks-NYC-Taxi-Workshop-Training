@@ -45,7 +45,6 @@ from libs.tblname import tblname
 columns = ["book_id", "book_author", "book_name", "book_pub_year"]
 vals = [
      ("b00001", "Arthur Conan Doyle", "A study in scarlet", 1887),
-     ("b00001", "Arthur Conan Doyle", "A study in scarlet", 1887),
      ("b01001", "Arthur Conan Doyle", "The adventures of Sherlock Holmes", 1892),
      ("b00501", "Arthur Conan Doyle", "The memoirs of Sherlock Holmes", 1893),
      ("b00300", "Arthur Conan Doyle", "The hounds of Baskerville", 1901)
@@ -327,7 +326,6 @@ booksOverwriteDF.write.mode("overwrite").format("delta").saveAsTable(books_tbl)
 
 # MAGIC %sql
 # MAGIC -- 3) Query
-# MAGIC -- Notice the "- the great" in the name in the couple records?
 # MAGIC select * from ${nbvars.books_tbl};
 
 # COMMAND ----------
@@ -339,7 +337,6 @@ booksOverwriteDF.write.mode("overwrite").format("delta").saveAsTable(books_tbl)
 
 columns = ["book_id", "book_author", "book_name", "book_pub_year", "book_price"]
 vals = [
-     ("b00001", "Arthur Conan Doyle", "A study in scarlet", 1887, 2.33),
      ("b00001", "Arthur Conan Doyle", "A study in scarlet", 1887, 5.12),
      ("b01001", "Arthur Conan Doyle", "The adventures of Sherlock Holmes", 1892, 12.00),
      ("b00501", "Arthur Conan Doyle", "The memoirs of Sherlock Holmes", 1893, 13.39),
