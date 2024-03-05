@@ -363,6 +363,7 @@ booksNewColDF.write.mode("overwrite").format("delta").option("mergeSchema", "tru
 # MAGIC %sql
 # MAGIC USE ${nbvars.books_db};
 # MAGIC
+# MAGIC -- Should give zero rows affected
 # MAGIC DELETE FROM books where book_price is null;
 
 # COMMAND ----------
