@@ -48,9 +48,11 @@ def: check_email(email):
 # MAGIC ## Explain code or query
 # MAGIC Databricks Assistant can describe complex pieces of code or queries in clear, concise language. It can help you better understand certain projects you may be unfamiliar with. 
 # MAGIC
-# MAGIC 1. Press the assistant (chatbox) symbol next to Workspace
+# MAGIC 1. Press the assistant symbol (looks like a four-edge star) next to Workspace
 # MAGIC 2. Run the cell below
 # MAGIC 3. ask the Assistant to explain the code with "Can you explain my check_email() function?"
+# MAGIC
+# MAGIC
 
 # COMMAND ----------
 

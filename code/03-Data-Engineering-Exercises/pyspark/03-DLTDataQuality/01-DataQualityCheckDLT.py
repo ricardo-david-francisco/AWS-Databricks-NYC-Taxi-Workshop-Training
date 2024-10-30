@@ -32,7 +32,7 @@ from pyspark.sql.functions import *
 # MAGIC
 # MAGIC How to deploy:
 # MAGIC
-# MAGIC 1. Go to Workflows Menu in the left bar, and the Delta Live Tables tab.
+# MAGIC 1. Go to `Delta Live Tables` Menu in the left bar.
 # MAGIC 2. Press `Create Pipeline`
 # MAGIC
 # MAGIC * Name: `donjohnson_trips_dq_dlt`, replace `donjohnson` with your name.
@@ -40,7 +40,8 @@ from pyspark.sql.functions import *
 # MAGIC * Notebook source: Find this notebook
 # MAGIC * Destination: Unity Catalog
 # MAGIC * Catalog: `training`
-# MAGIC * Policy: `dlt-training-policy`
+# MAGIC * Schema / DB: None
+# MAGIC * Policy: `dlt-default-policy`
 # MAGIC * Cluster mode: `Enhanced autoscaling`
 # MAGIC * Min workers: 1
 # MAGIC * Max workers: 5

@@ -67,7 +67,7 @@ month_cnt_df.write.mode("overwrite").format("delta").saveAsTable(borough_month_t
 # MAGIC
 # MAGIC ## How to deploy this notebook a a job:
 # MAGIC
-# MAGIC 1. Go to Workflows menu
+# MAGIC 1. Go to Job Runs menu
 # MAGIC 2. Press create job
 # MAGIC
 # MAGIC * Task name: `donjohnson_report_trips_by_month_borough`, replace donjohnson with your name

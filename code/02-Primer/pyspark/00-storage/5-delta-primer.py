@@ -98,38 +98,42 @@ books_df.write.mode("overwrite").format("delta").saveAsTable(books_tbl)
 # MAGIC  
 # MAGIC We will run the "OPTIMIZE" command to compact small files into larger for performance.
 # MAGIC Note: The performance improvements are evident at scale
+# MAGIC
+# MAGIC No longer needed, as dataset is auto-optimized by Spark after version 3.4.
+# MAGIC Skip to `Append operation` below.
 
 # COMMAND ----------
 
-# 2) Lets read the dataset and check the partition size, it should be the same as number of small files
-preDeltaOptimizeDF = spark.sql(f"select * from {books_tbl}")
-preDeltaOptimizeDF.rdd.getNumPartitions()
+# This is no longer supported in shared clusters
+# # 2) Lets read the dataset and check the partition size, it should be the same as number of small files
+# # preDeltaOptimizeDF = spark.sql(f"select * from {books_tbl}")
+# # preDeltaOptimizeDF.rdd.getNumPartitions()
 
 # COMMAND ----------
 
-# MAGIC %sql DESCRIBE DETAIL ${nbvars.books_tbl};
-# MAGIC --3) Lets run DESCRIBE DETAIL 
-# MAGIC --Notice that numFiles = 5
+# %sql DESCRIBE DETAIL ${nbvars.books_tbl};
+# --3) Lets run DESCRIBE DETAIL 
+# --Notice that numFiles = 1
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC --4) Now, lets run optimize
-# MAGIC USE ${nbvars.books_db};
-# MAGIC OPTIMIZE books;
+# %sql
+# --4) Now, lets run optimize
+# USE ${nbvars.books_db};
+# OPTIMIZE books;
 
 # COMMAND ----------
 
-# MAGIC %sql DESCRIBE DETAIL ${nbvars.books_tbl};
-# MAGIC --5) Notice the number of files now - its 1 file
+# %sql DESCRIBE DETAIL ${nbvars.books_tbl};
+# --5) Notice the number of files now - its 1 file
 
 # COMMAND ----------
 
-#7) Lets read the dataset and check the partition size, it should be the same as number of small files
-postDeltaOptimizeDF = spark.sql(f"select * from {books_tbl}")
-postDeltaOptimizeDF.rdd.getNumPartitions()
-#Its 1, and not 6
-#Guess why?
+# #7) Lets read the dataset and check the partition size, it should be the same as number of small files
+# postDeltaOptimizeDF = spark.sql(f"select * from {books_tbl}")
+# postDeltaOptimizeDF.rdd.getNumPartitions()
+# #Its 1, and not 6
+# #Guess why?
 
 # COMMAND ----------
 
